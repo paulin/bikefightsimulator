@@ -5,6 +5,23 @@ and changes.
 
 ## 2026-06-13
 
+### Data Science Playground — Phase 5 sequential (Time Series, Q-Learning, RL)
+- **Time Series Forecasting**: build a signal from trend + seasonality + noise
+  (+ click-to-add shocks), decompose it (least-squares trend, averaged seasonal
+  indices, residual σ), and forecast forward with a widening 95% band. Internal
+  view pulls the trend / seasonal / residual components apart.
+- **Q-Learning**: tabular control on an editable gridworld (paint walls / goal /
+  pit / start). Main view draws each cell's four action-values as colored wedges
+  + the greedy arrow + the gold greedy path from start; internal view charts
+  return per episode. α / γ / ε sliders, train/step/reset.
+- **Reinforcement Learning** as a multi-armed bandit (the cleanest explore-vs-
+  exploit demo): ε-greedy / greedy / UCB, value estimates vs hidden truths, and
+  an internal cumulative-regret + %-optimal chart.
+- Smoke test now drives the sequential learners too: Q-learning reaches ~100%
+  success on the default grid; the bandit under UCB reliably clears 55%+ optimal
+  pulls. (ε-greedy can legitimately lock onto a wrong arm — the lesson the screen
+  teaches — so the stable assertion uses UCB.) 17 ready screens; 3 remain.
+
 ### Data Science Playground — Neural Network (Phase 4 begins)
 - **Neural Network**: a from-scratch MLP (no libraries) trained by backprop on 2D
   classification. Configurable hidden width, 1–2 hidden layers, tanh/ReLU,

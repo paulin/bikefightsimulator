@@ -10,7 +10,7 @@ you can watch happen in the browser.
 | App | What it is |
 | --- | --- |
 | [Bikefight RL Simulator](bikefight/) | Two vehicles fight in an arena while a blue learner trains against a scripted bot via a TensorFlow.js DQN. Includes a live "Inside the Brain" panel that visualizes the network's observations, activations, and Q-values. |
-| [Data Science Playground](datascience/) | An interactive sandbox for rebuilding intuition about ML algorithms. Manipulate the data and hyperparameters and watch the internals update live. Phases 1–3 are built (foundations, supervised learning, and clustering — 13 screens incl. DBSCAN and a dendrogram-based Hierarchical Clustering); the remaining roadmap (deep learning, RL, time series) is listed in-app. |
+| [Data Science Playground](datascience/) | An interactive sandbox for rebuilding intuition about ML algorithms. Manipulate the data and hyperparameters and watch the internals update live. 17 of the spec's 20 screens are built — all of Phases 1–3, the Neural Network, and the sequential trio (Time Series Forecasting, Q-Learning gridworld, a multi-armed-bandit RL screen). Only the deep-sequence models (CNN, RNN/LSTM, Transformers) remain, and they're listed in-app. |
 
 _More to come — each new experiment lives in its own folder._
 

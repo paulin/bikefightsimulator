@@ -128,6 +128,9 @@ const files = [
   "src/algos/dbscan.js",
   "src/algos/hierarchical.js",
   "src/algos/neuralNetwork.js",
+  "src/algos/timeSeries.js",
+  "src/algos/qlearning.js",
+  "src/algos/reinforcement.js",
   "src/algos/upcoming.js",
 ];
 const source = files.map((f) => fs.readFileSync(path.join(base, f), "utf8")).join("\n;\n");
@@ -157,7 +160,8 @@ assert(navItems.length >= 20, `expected the full roadmap in the nav, got ${navIt
 const readyIds = ["linear-regression", "knn", "decision-tree", "kmeans", "pca",
   "logistic-regression", "svm", "naive-bayes",
   "random-forest", "gradient-boosting", "xgboost",
-  "dbscan", "hierarchical", "neural-network"];
+  "dbscan", "hierarchical", "neural-network",
+  "time-series", "q-learning", "reinforcement-learning"];
 
 // Open every screen and run it.
 let opened = 0;
@@ -202,6 +206,25 @@ for (const item of navItems) {
         const acc2 = parseFloat(metricsTable.querySelectorAll("td.metric-val")[0].textContent);
         if (process.env.DBG) console.error(id, "trained accuracy:", acc2 + "%");
         assert(acc2 >= 60, `${id}: training did not learn (accuracy ${acc2}% after training)`);
+      }
+
+      // Sequential learners: run many episodes/pulls, then confirm a learning
+      // signal crosses a (deliberately low, non-flaky) threshold.
+      if (id === "q-learning" || id === "reinforcement-learning") {
+        // The bandit uses ε-greedy by default, which can legitimately lock onto a
+        // wrong arm (the lesson the screen teaches) — so for a stable assertion we
+        // switch it to UCB, which provably keeps exploring.
+        if (id === "reinforcement-learning") { const sel = stage.querySelector("select"); if (sel) { sel.value = "ucb"; sel.dispatch("change", {}); } }
+        let btn = null;
+        for (const b of stage.querySelectorAll("button")) { if (/^(run|train)$/i.test(b.textContent.trim())) { btn = b; break; } }
+        assert(btn, `${id}: no run button found`);
+        btn.dispatch("click", { preventDefault() {} });
+        drain(700);
+        const cells = metricsTable.querySelectorAll("td.metric-val");
+        // q-learning: last metric is "Success (last 50)"; bandit: "% optimal pulls" is 4th of 5.
+        const signal = parseFloat(id === "q-learning" ? cells[cells.length - 1].textContent : cells[3].textContent);
+        if (process.env.DBG) console.error(id, "learning signal:", signal + "%");
+        assert(Number.isFinite(signal) && signal >= 30, `${id}: did not learn (signal ${signal}% after training)`);
       }
     }
     opened++;
