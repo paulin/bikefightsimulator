@@ -15,8 +15,11 @@ and changes.
   run (serve root, pick an app), the layout, and how to add a new app.
 - Kept `docs/journal.md` at the root as the repo-wide journal; Bikefight's own
   spec/notes moved to `bikefight/docs/`.
-- Pending (outward-facing, needs the user): rename the GitHub repo
-  `bikefightsimulator` → `MentalPlayground`, and optionally the local folder.
+- Renamed the GitHub repo `bikefightsimulator` → `MentalPlayground` (GitHub
+  redirects the old URL), updated the local `origin` remote, and pushed `main`.
+  The local folder is still `bikefightsimulator/` (cosmetic; can be renamed
+  manually outside the session). Confirmed the cert warning the user saw was
+  their Netgear router admin page (routerlogin.net), unrelated to this work.
 
 ### Brain viz: drop tabs, run alongside sim, add hover explainers
 - Removed the Simulator/Brain tab switch. The arena and the brain now render
