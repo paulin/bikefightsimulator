@@ -125,6 +125,8 @@ const files = [
   "src/algos/randomForest.js",
   "src/algos/gradientBoosting.js",
   "src/algos/xgboost.js",
+  "src/algos/dbscan.js",
+  "src/algos/hierarchical.js",
   "src/algos/upcoming.js",
 ];
 const source = files.map((f) => fs.readFileSync(path.join(base, f), "utf8")).join("\n;\n");
@@ -153,7 +155,8 @@ assert(navItems.length >= 20, `expected the full roadmap in the nav, got ${navIt
 
 const readyIds = ["linear-regression", "knn", "decision-tree", "kmeans", "pca",
   "logistic-regression", "svm", "naive-bayes",
-  "random-forest", "gradient-boosting", "xgboost"];
+  "random-forest", "gradient-boosting", "xgboost",
+  "dbscan", "hierarchical"];
 
 // Open every screen and run it.
 let opened = 0;

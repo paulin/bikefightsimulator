@@ -5,6 +5,18 @@ and changes.
 
 ## 2026-06-13
 
+### Data Science Playground — Phase 3 clustering
+- **DBSCAN**: density-based clustering. Main view colors points by cluster, draws
+  the within-ε link graph, rings noise in red, enlarges core points, and shows
+  the ε disk around the hovered point. Internal view bars the core/border/noise
+  counts. ε and MinPts sliders.
+- **Hierarchical Clustering** (agglomerative): single/complete/average linkage,
+  merging nearest clusters bottom-up. Internal view is a real **dendrogram** with
+  a draggable cut line; branches below the cut are colored by their resulting
+  cluster and the main-view points recolor to match. Verified the U-shaped
+  merge tree renders and the cut→cluster-count mapping is correct.
+- 13 ready screens now; smoke test green across all of them.
+
 ### Data Science Playground — Phase 2 tree ensembles (completes Phase 2)
 - Extracted a shared **CART library** (`src/lib/cart.js`): classification trees
   (2D, with optional per-split feature bagging for forests) and 1D regression

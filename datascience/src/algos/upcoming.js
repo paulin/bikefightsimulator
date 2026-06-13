@@ -3,11 +3,7 @@
 // The rest of the spec's roadmap. These register as "soon" so the full map of
 // concepts is visible in the nav; each becomes a real screen as it's built.
 [
-  // Phase 3 — density / hierarchical clustering
-  { id: "dbscan", name: "DBSCAN", phase: "Phase 3 — Unsupervised", intuition: "Clusters are dense regions; sparse points are just noise." },
-  { id: "hierarchical", name: "Hierarchical Clustering", phase: "Phase 3 — Unsupervised", intuition: "Clusters exist at every scale; cut the dendrogram wherever you like." },
-
-  // Phase 3 — deep learning
+  // Phase 4 — deep learning
   { id: "neural-network", name: "Neural Network", phase: "Phase 4 — Deep Learning", intuition: "Stacked simple transformations compose into arbitrarily complex functions." },
   { id: "cnn", name: "CNN", phase: "Phase 4 — Deep Learning", intuition: "Patterns become features, features become objects." },
   { id: "rnn-lstm", name: "RNN / LSTM", phase: "Phase 4 — Deep Learning", intuition: "Past information is carried forward through a hidden state." },
