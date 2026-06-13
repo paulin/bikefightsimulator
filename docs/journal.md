@@ -5,6 +5,22 @@ and changes.
 
 ## 2026-06-13
 
+### Data Science Playground — deep-learning trio (spec complete, 20/20)
+- **CNN**: an interactive convolution. Paint a 16×16 image, pick or hand-edit a
+  3×3 kernel (Sobel/edge/blur/sharpen), and watch the feature map respond; ReLU
+  and 2×2 max-pooling toggles. Internal view shows the editable kernel and the
+  exact patch·kernel dot product under the cursor.
+- **RNN / LSTM**: a single gated memory cell — cellₜ = forget·cellₜ₋₁ + input·xₜ,
+  outputₜ = out·tanh(cellₜ). Main view unrolls input / cell state / output over
+  time; internal view shows the gate bars, the update equation, and the memory
+  half-life. The forget-gate slider makes "how long memory lasts" tangible.
+- **Transformers**: an interactive self-attention matrix. Deterministic (untrained)
+  per-token query/key projections per head; click a row to select a token and see
+  arcs to what it attends to. Heads / softmax temperature / positional-bias
+  controls. Framed honestly as illustrating the mechanism, not a trained LM.
+- Removed the roadmap stub (`upcoming.js`) now that all 20 spec screens are real.
+  Smoke test exercises all 20; landing page nav has no "soon" entries left.
+
 ### Data Science Playground — Phase 5 sequential (Time Series, Q-Learning, RL)
 - **Time Series Forecasting**: build a signal from trend + seasonality + noise
   (+ click-to-add shocks), decompose it (least-squares trend, averaged seasonal

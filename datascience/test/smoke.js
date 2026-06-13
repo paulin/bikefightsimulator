@@ -25,7 +25,7 @@ function ctx2d() {
   return {
     fillStyle: "", strokeStyle: "", lineWidth: 1, font: "", textAlign: "", textBaseline: "",
     fillRect: noop, strokeRect: noop, clearRect: noop, beginPath: noop, closePath: noop,
-    moveTo: noop, lineTo: noop, arc: noop, arcTo: noop, ellipse: noop, rect: noop, fill: noop, stroke: noop,
+    moveTo: noop, lineTo: noop, arc: noop, arcTo: noop, ellipse: noop, quadraticCurveTo: noop, bezierCurveTo: noop, rect: noop, fill: noop, stroke: noop,
     save: noop, restore: noop, translate: noop, rotate: noop, scale: noop, setLineDash: noop,
     fillText: noop, strokeText: noop, measureText: () => ({ width: 0 }),
     createImageData: (w, h) => ({ data: new Uint8ClampedArray(w * h * 4), width: w, height: h }),
@@ -131,7 +131,9 @@ const files = [
   "src/algos/timeSeries.js",
   "src/algos/qlearning.js",
   "src/algos/reinforcement.js",
-  "src/algos/upcoming.js",
+  "src/algos/cnn.js",
+  "src/algos/rnn.js",
+  "src/algos/transformers.js",
 ];
 const source = files.map((f) => fs.readFileSync(path.join(base, f), "utf8")).join("\n;\n");
 
@@ -161,7 +163,8 @@ const readyIds = ["linear-regression", "knn", "decision-tree", "kmeans", "pca",
   "logistic-regression", "svm", "naive-bayes",
   "random-forest", "gradient-boosting", "xgboost",
   "dbscan", "hierarchical", "neural-network",
-  "time-series", "q-learning", "reinforcement-learning"];
+  "time-series", "q-learning", "reinforcement-learning",
+  "cnn", "rnn-lstm", "transformers"];
 
 // Open every screen and run it.
 let opened = 0;
