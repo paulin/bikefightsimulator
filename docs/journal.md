@@ -5,6 +5,22 @@ and changes.
 
 ## 2026-06-13
 
+### Data Science Playground — Phase 2 classifiers
+- Added the three boundary/probabilistic classifiers from Phase 2:
+  **Logistic Regression** (gradient descent on log-loss, probability heatmap,
+  movable decision threshold, sigmoid view placing each point by its score),
+  **SVM** (linear soft-margin trained with Pegasos sub-gradient steps; boundary +
+  both margin lines + highlighted support vectors; a functional-margin bar chart
+  as the internal view; C trades margin width vs errors), and **Naive Bayes**
+  (Gaussian per-feature likelihoods, posterior shading, per-class σ/2σ ellipses,
+  togglable features, 1D class-conditional bell curves internally).
+- Removed those three from the `soon` roadmap list so they don't double-register.
+- Fixed a **test-stub bug**: the fake DOM's `innerHTML = ""` wasn't clearing
+  children, so screens accumulated across the smoke test and `querySelector` hit
+  stale tables. Made the setter empty children like a real browser. The smoke
+  test now also clicks Train on the iterative learners and asserts the training
+  loop advances — logistic and SVM both reach 100% on separable data.
+
 ### New app: Data Science Playground (Phase 1)
 - Built `datascience/` from `docs/DataScience_Playground_Spec.md` — a second app
   in the playground. Self-contained, no build step, vanilla JS loaded via script

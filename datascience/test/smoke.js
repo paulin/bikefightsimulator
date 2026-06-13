@@ -25,7 +25,7 @@ function ctx2d() {
   return {
     fillStyle: "", strokeStyle: "", lineWidth: 1, font: "", textAlign: "", textBaseline: "",
     fillRect: noop, strokeRect: noop, clearRect: noop, beginPath: noop, closePath: noop,
-    moveTo: noop, lineTo: noop, arc: noop, arcTo: noop, rect: noop, fill: noop, stroke: noop,
+    moveTo: noop, lineTo: noop, arc: noop, arcTo: noop, ellipse: noop, rect: noop, fill: noop, stroke: noop,
     save: noop, restore: noop, translate: noop, rotate: noop, scale: noop, setLineDash: noop,
     fillText: noop, strokeText: noop, measureText: () => ({ width: 0 }),
     createImageData: (w, h) => ({ data: new Uint8ClampedArray(w * h * 4), width: w, height: h }),
@@ -52,10 +52,12 @@ function makeEl(tag) {
   const node = {
     tagName: (tag || "").toUpperCase(), tag, id: "", children: [], parentNode: null,
     _listeners: {}, _cls: new Set(), dataset: {}, style: {},
-    textContent: "", innerHTML: "", value: "", checked: false, type: "", href: "",
-    width: 300, height: 300,
+    textContent: "", value: "", checked: false, type: "", href: "",
+    width: 300, height: 300, _html: "",
     get className() { return [...this._cls].join(" "); },
     set className(v) { this._cls = new Set(String(v).split(/\s+/).filter(Boolean)); },
+    get innerHTML() { return this._html; },
+    set innerHTML(v) { this._html = v; if (v === "") this.children = []; }, // empty = clear children, like a real browser
     classList: {
       add: (...c) => c.forEach((x) => node._cls.add(x)),
       remove: (...c) => c.forEach((x) => node._cls.delete(x)),
@@ -116,6 +118,9 @@ const files = [
   "src/algos/decisionTree.js",
   "src/algos/kmeans.js",
   "src/algos/pca.js",
+  "src/algos/logisticRegression.js",
+  "src/algos/svm.js",
+  "src/algos/naiveBayes.js",
   "src/algos/upcoming.js",
 ];
 const source = files.map((f) => fs.readFileSync(path.join(base, f), "utf8")).join("\n;\n");
@@ -142,7 +147,8 @@ assert(DSP && typeof DSP.init === "function", "DSP did not initialize");
 const navItems = document.querySelectorAll(".nav-item");
 assert(navItems.length >= 20, `expected the full roadmap in the nav, got ${navItems.length}`);
 
-const readyIds = ["linear-regression", "knn", "decision-tree", "kmeans", "pca"];
+const readyIds = ["linear-regression", "knn", "decision-tree", "kmeans", "pca",
+  "logistic-regression", "svm", "naive-bayes"];
 
 // Open every screen and run it.
 let opened = 0;
@@ -164,7 +170,23 @@ for (const item of navItems) {
       canvas.dispatch("mousedown", { clientX: 180, clientY: 160, button: 0, shiftKey: true, preventDefault() {} });
       drain(2);
       // verify metrics table got populated
-      assert(stage.querySelector("table.metrics"), `${id}: no metrics rendered`);
+      const metricsTable = stage.querySelector("table.metrics");
+      assert(metricsTable, `${id}: no metrics rendered`);
+
+      // For the iteratively-trained screens, click the train button and run many
+      // frames, then confirm the training loop actually advanced (step counter > 0).
+      if (id === "logistic-regression" || id === "svm") {
+        let btn = null;
+        for (const b of stage.querySelectorAll("button")) {
+          if (/run gradient|train/i.test(b.textContent)) { btn = b; break; }
+        }
+        assert(btn, `${id}: no train button found`);
+        btn.dispatch("click", { preventDefault() {} });
+        drain(200);
+        const lastVal = metricsTable.querySelectorAll("td.metric-val").pop();
+        const steps = Number(lastVal.textContent);
+        assert(Number.isFinite(steps) && steps > 0, `${id}: training loop did not advance (steps=${lastVal.textContent})`);
+      }
     }
     opened++;
   } catch (e) {
