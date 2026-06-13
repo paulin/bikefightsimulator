@@ -5,6 +5,26 @@ and changes.
 
 ## 2026-06-12
 
+### RL visualization ("Inside the Brain" tab)
+- Added a tabbed view in the arena panel: **Simulator** (the existing arena) and
+  **Inside the Brain**, a live look at the DQN's forward pass. The side panel
+  (controls/stats) stays visible on both, so you can train and watch at once.
+- Shows, updated every frame: the 15-value **observation** as signed bars (what
+  the bike sees), the **network** as columns of neurons colored by activation
+  with connection lines that brighten with the source neuron's firing, the 11
+  **Q-values** as bars with the greedy pick highlighted and an
+  explore/exploit badge, and **training internals** (epsilon, replay-buffer
+  fill, env/gradient step counts, and a live training-loss sparkline).
+- Implementation: `src/brainViz.js` (`BrainRenderer`, pure canvas). Added
+  `DQNAgent.getActivations(obs)` which builds a cached `tf.model` over the live
+  model's layer outputs (rebuilt if the model is swapped on import) to extract
+  hidden-layer activations + Q-values in one forward pass. `main.js` records the
+  last decision (action + whether it was a random explore step) and recent
+  losses, and only computes/draws the brain when its tab is active (one forward
+  pass per frame, independent of sim speed).
+- Decision: kept the observation at 15 inputs and reused the same forward pass
+  for both the action and the viz to avoid slowing training, especially at 50x.
+
 ### Workflow
 - Started keeping this journal (newest date at top).
 - Established practice: commit after each request.

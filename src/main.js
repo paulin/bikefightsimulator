@@ -4,12 +4,23 @@
   const sim = new Simulation(CONFIG);
   const arenaCanvas = document.getElementById("arena");
   const renderer = new Renderer(arenaCanvas, CONFIG);
+  const brainCanvas = document.getElementById("brain");
+  const brainRenderer = new BrainRenderer(brainCanvas, ACTIONS.map((a) => a.name));
   const chartCanvas = document.getElementById("chart");
   const chartCtx = chartCanvas.getContext("2d");
 
   let agent = null;
   let mode = "idle"; // "idle" | "train" | "eval"
   let speed = 1;
+  let activeTab = "sim"; // "sim" | "brain"
+
+  // Most recent decision + training internals, for the "Inside the Brain" tab
+  const brainState = {
+    obs: null,
+    chosenAction: 0,
+    wasExplore: false,
+    losses: [], // recent training losses
+  };
 
   // Training stats
   const stats = {
@@ -82,12 +93,20 @@
 
     const obs = sim.getObservation(0);
     let actionIdx;
+    let wasExplore = false;
     if (mode === "eval") {
       const model = bestModel || agent.model;
       actionIdx = agent.greedyAction(model, obs);
+    } else if (Math.random() < agent.epsilon) {
+      // Explore: random action (recorded so the brain tab can show it)
+      actionIdx = (Math.random() * ACTIONS.length) | 0;
+      wasExplore = true;
     } else {
-      actionIdx = agent.act(obs, agent.epsilon);
+      actionIdx = agent.greedyAction(agent.model, obs);
     }
+    brainState.obs = obs;
+    brainState.chosenAction = actionIdx;
+    brainState.wasExplore = wasExplore;
 
     const learnerControls = ACTIONS[actionIdx];
     const botControls = scriptedBotControls(sim, 1);
@@ -104,7 +123,11 @@
       agent.envSteps++;
       agent.decayEpsilon();
       if (agent.envSteps % CONFIG.dqn.trainEvery === 0) {
-        await agent.train();
+        const loss = await agent.train();
+        if (loss != null) {
+          brainState.losses.push(loss);
+          if (brainState.losses.length > 500) brainState.losses.shift();
+        }
       }
     }
 
@@ -205,6 +228,33 @@
     }
   }
 
+  function drawBrain() {
+    if (!agent || !brainState.obs) {
+      brainRenderer.draw(null);
+      return;
+    }
+    const acts = agent.getActivations(brainState.obs); // [hidden1, hidden2, q]
+    const q = acts[acts.length - 1];
+    const hidden = acts.slice(0, acts.length - 1);
+    let greedy = 0;
+    for (let i = 1; i < q.length; i++) if (q[i] > q[greedy]) greedy = i;
+    brainRenderer.draw({
+      obs: brainState.obs,
+      q,
+      activations: hidden,
+      chosenAction: brainState.chosenAction,
+      greedyAction: greedy,
+      wasExplore: brainState.wasExplore,
+      epsilon: agent.epsilon,
+      epsilonMin: CONFIG.dqn.epsilonMin,
+      envSteps: agent.envSteps,
+      trainSteps: agent.trainSteps,
+      bufferSize: agent.buffer.size,
+      bufferCap: CONFIG.dqn.bufferSize,
+      losses: brainState.losses,
+    });
+  }
+
   // ---- Main loop ----
   let frameBusy = false;
   async function frame() {
@@ -216,7 +266,8 @@
             await stepOnce();
           }
         }
-        renderer.draw(sim);
+        if (activeTab === "brain") drawBrain();
+        else renderer.draw(sim);
         updateStatsUI();
       } finally {
         frameBusy = false;
@@ -260,6 +311,20 @@
     sim.reset();
     drawChart();
     setStatus("Brain reset");
+  });
+
+  // Tabs: switch between the simulator view and the RL internals view
+  document.querySelectorAll("#tabs .tab").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      activeTab = btn.dataset.tab;
+      document
+        .querySelectorAll("#tabs .tab")
+        .forEach((b) => b.classList.toggle("active", b === btn));
+      arenaCanvas.hidden = activeTab !== "sim";
+      brainCanvas.hidden = activeTab !== "brain";
+      if (activeTab === "brain") drawBrain();
+      else renderer.draw(sim);
+    });
   });
 
   // Click the arena to drop an obstacle (mapping CSS pixels -> canvas pixels)

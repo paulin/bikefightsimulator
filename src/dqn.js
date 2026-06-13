@@ -82,6 +82,24 @@ class DQNAgent {
     });
   }
 
+  // For the visualization tab: run one forward pass and return the activations
+  // of every layer — [hidden1[], hidden2[], ..., qValues[]]. Shares weights with
+  // the live model (an activation model is built lazily and rebuilt if the model
+  // is swapped out, e.g. on import).
+  getActivations(obs) {
+    if (this._actModel == null || this._actModelFor !== this.model) {
+      this._actModel = tf.model({
+        inputs: this.model.inputs,
+        outputs: this.model.layers.map((l) => l.output),
+      });
+      this._actModelFor = this.model; // don't dispose: weights are shared
+    }
+    return tf.tidy(() => {
+      const outs = this._actModel.predict(tf.tensor2d([obs]));
+      return outs.map((o) => Array.from(o.dataSync()));
+    });
+  }
+
   remember(s, a, r, s2, done) {
     this.buffer.push({ s, a, r, s2, done });
   }

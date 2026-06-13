@@ -34,12 +34,39 @@ main {
   flex-wrap: wrap;
 }
 
-#arena {
+#arena, #brain {
   background: #1b1e27;
   border: 1px solid #2e3342;
   border-radius: 6px;
   display: block;
 }
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.tab {
+  flex: 0 0 auto;
+  padding: 7px 16px;
+  background: #1b1e27;
+  color: #9aa3b5;
+  border: 1px solid #2e3342;
+  border-radius: 5px 5px 0 0;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.tab:hover { background: #232733; }
+
+.tab.active {
+  background: #2d4a5a;
+  border-color: #3c6a7a;
+  color: #ffffff;
+}
+
+.tab-view[hidden] { display: none; }
 
 .side-panel {
   display: flex;
