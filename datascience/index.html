@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Data Science Playground</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>Data Science Playground</h1>
+    <span class="tagline">Play with an algorithm for 60 seconds and remember how it works.</span>
+  </header>
+
+  <div class="app">
+    <nav id="nav" class="nav"></nav>
+    <main id="stage" class="stage"></main>
+  </div>
+
+  <!-- Shared engine first, then each algorithm self-registers, then init. -->
+  <script src="src/framework.js"></script>
+  <script src="src/algos/linearRegression.js"></script>
+  <script src="src/algos/knn.js"></script>
+  <script src="src/algos/decisionTree.js"></script>
+  <script src="src/algos/kmeans.js"></script>
+  <script src="src/algos/pca.js"></script>
+  <script src="src/algos/upcoming.js"></script>
+  <script>DSP.init();</script>
+</body>
+</html>

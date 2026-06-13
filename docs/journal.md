@@ -5,6 +5,30 @@ and changes.
 
 ## 2026-06-13
 
+### New app: Data Science Playground (Phase 1)
+- Built `datascience/` from `docs/DataScience_Playground_Spec.md` — a second app
+  in the playground. Self-contained, no build step, vanilla JS loaded via script
+  tags, same dark design language as Bikefight.
+- **Shared engine** (`src/framework.js`): the spec's universal screen layout
+  (data controls · hyperparameters · metrics · main viz · internal viz · key
+  intuition), UI control builders (slider/button/toggle/select/metric/note), a
+  `Plot` class with data↔pixel transforms + grid/point/line/rect drawing, a
+  generic `enablePointEditing` helper (drag / click-to-add / shift-click-remove),
+  dataset generators, and a hash-routed sidebar nav grouped by phase.
+- **Phase 1 screens, fully interactive** (`src/algos/`): Linear Regression
+  (drag points, gradient descent walking a live loss surface, residuals, exact
+  solve), KNN (draggable query point, decision regions, neighbor-vote panel,
+  leave-one-out accuracy), Decision Tree (axis-aligned regions + rendered tree
+  with per-split info gain, Gini/entropy), K-Means (draggable centroids,
+  assign/update stepping, inertia chart), PCA in 2D (principal axes, rotated
+  PC-space view, variance explained, reduce-to-1D).
+- Phases 2–5 from the spec are registered as `soon` so the full roadmap shows in
+  the nav and each becomes a real screen as it's built.
+- **Verification**: `node test/smoke.js` stands up a fake DOM + canvas stub,
+  loads the real source, opens all 20 screens, runs render frames, and fires
+  click/drag on each ready screen — all pass. Wired the app into the root landing
+  page and README.
+
 ### Repo → MentalPlayground (multi-app reorg)
 - Reframed the repo as **MentalPlayground**, a collection of single-page JS
   learning apps. Moved the entire Bikefight app into `bikefight/` (via `git mv`,
