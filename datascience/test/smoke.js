@@ -127,6 +127,7 @@ const files = [
   "src/algos/xgboost.js",
   "src/algos/dbscan.js",
   "src/algos/hierarchical.js",
+  "src/algos/neuralNetwork.js",
   "src/algos/upcoming.js",
 ];
 const source = files.map((f) => fs.readFileSync(path.join(base, f), "utf8")).join("\n;\n");
@@ -156,7 +157,7 @@ assert(navItems.length >= 20, `expected the full roadmap in the nav, got ${navIt
 const readyIds = ["linear-regression", "knn", "decision-tree", "kmeans", "pca",
   "logistic-regression", "svm", "naive-bayes",
   "random-forest", "gradient-boosting", "xgboost",
-  "dbscan", "hierarchical"];
+  "dbscan", "hierarchical", "neural-network"];
 
 // Open every screen and run it.
 let opened = 0;
@@ -183,7 +184,7 @@ for (const item of navItems) {
 
       // For the iteratively-trained screens, click the train button and run many
       // frames, then confirm the training loop actually advanced (step counter > 0).
-      if (id === "logistic-regression" || id === "svm") {
+      if (id === "logistic-regression" || id === "svm" || id === "neural-network") {
         let btn = null;
         for (const b of stage.querySelectorAll("button")) {
           if (/run gradient|train/i.test(b.textContent)) { btn = b; break; }
@@ -191,9 +192,16 @@ for (const item of navItems) {
         assert(btn, `${id}: no train button found`);
         btn.dispatch("click", { preventDefault() {} });
         drain(200);
-        const lastVal = metricsTable.querySelectorAll("td.metric-val").pop();
-        const steps = Number(lastVal.textContent);
-        assert(Number.isFinite(steps) && steps > 0, `${id}: training loop did not advance (steps=${lastVal.textContent})`);
+        const cells = metricsTable.querySelectorAll("td.metric-val");
+        const steps = Number(cells[cells.length - 1].textContent);
+        assert(Number.isFinite(steps) && steps > 0, `${id}: training loop did not advance (steps=${cells[cells.length - 1].textContent})`);
+        // accuracy is the first metric on all three; confirm training actually learns.
+        const acc = parseFloat(cells[0].textContent);
+        assert(Number.isFinite(acc), `${id}: accuracy is not finite (${cells[0].textContent})`);
+        if (id === "neural-network") drain(400); // give backprop more epochs
+        const acc2 = parseFloat(metricsTable.querySelectorAll("td.metric-val")[0].textContent);
+        if (process.env.DBG) console.error(id, "trained accuracy:", acc2 + "%");
+        assert(acc2 >= 60, `${id}: training did not learn (accuracy ${acc2}% after training)`);
       }
     }
     opened++;

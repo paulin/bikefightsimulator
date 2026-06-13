@@ -5,6 +5,17 @@ and changes.
 
 ## 2026-06-13
 
+### Data Science Playground — Neural Network (Phase 4 begins)
+- **Neural Network**: a from-scratch MLP (no libraries) trained by backprop on 2D
+  classification. Configurable hidden width, 1–2 hidden layers, tanh/ReLU,
+  learning rate. Main view shows the decision-boundary heatmap bending to fit
+  Circles / XOR / Spiral / Blobs; internal view is a live network graph — edges
+  colored/weighted by sign and magnitude, nodes lit by the activation for the
+  hovered input point.
+- Extended the smoke test to actually *train* the iterative learners (logistic,
+  SVM, now NN) and assert they learn: across repeated runs the NN reaches 100%
+  on the nonlinear Circles set, confirming the hand-rolled backprop is correct.
+
 ### Data Science Playground — Phase 3 clustering
 - **DBSCAN**: density-based clustering. Main view colors points by cluster, draws
   the within-ε link graph, rings noise in red, enlarges core points, and shows
