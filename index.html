@@ -42,12 +42,18 @@
           <button data-speed="10" class="speed">10x</button>
           <button data-speed="50" class="speed">50x</button>
         </div>
+        <h3>Obstacles</h3>
+        <div class="button-row">
+          <button id="btn-clear-obstacles">Clear Obstacles</button>
+        </div>
+        <div class="hint">Click the arena to drop a green obstacle — it blocks shots and bikes can't drive over it.</div>
       </div>
 
       <div class="panel">
         <h2>Statistics</h2>
         <table class="stats">
           <tr><td>Episode</td><td id="stat-episodes">0</td></tr>
+          <tr><td>Record (W–L–D)</td><td id="stat-record">0–0–0</td></tr>
           <tr><td>Win Rate (last 100)</td><td id="stat-winrate">–</td></tr>
           <tr><td>Avg Reward (last 100)</td><td id="stat-avgreward">–</td></tr>
           <tr><td>Epsilon</td><td id="stat-epsilon">1.00</td></tr>

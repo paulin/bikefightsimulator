@@ -2,7 +2,8 @@
 
 (function () {
   const sim = new Simulation(CONFIG);
-  const renderer = new Renderer(document.getElementById("arena"), CONFIG);
+  const arenaCanvas = document.getElementById("arena");
+  const renderer = new Renderer(arenaCanvas, CONFIG);
   const chartCanvas = document.getElementById("chart");
   const chartCtx = chartCanvas.getContext("2d");
 
@@ -17,6 +18,9 @@
     rewards: [], // per-episode total reward — last 200
     hitsDealt: 0,
     hitsTaken: 0,
+    wins: 0, // all-time blue wins / losses / draws
+    losses: 0,
+    draws: 0,
   };
 
   // Per-episode accumulators
@@ -49,6 +53,9 @@
     stats.rewards = [];
     stats.hitsDealt = 0;
     stats.hitsTaken = 0;
+    stats.wins = 0;
+    stats.losses = 0;
+    stats.draws = 0;
     epReward = 0;
     if (bestWeights) bestWeights.forEach((w) => w.dispose());
     bestWeights = null;
@@ -113,6 +120,9 @@
     }
 
     stats.episodes++;
+    if (result.winner === 0) stats.wins++;
+    else if (result.winner === 1) stats.losses++;
+    else stats.draws++;
     stats.results.push(result.winner === 0 ? 1 : 0);
     stats.rewards.push(epReward);
     if (stats.results.length > 200) stats.results.shift();
@@ -142,6 +152,7 @@
     $("stat-epsilon").textContent = agent ? agent.epsilon.toFixed(3) : "–";
     $("stat-hitsdealt").textContent = stats.hitsDealt;
     $("stat-hitstaken").textContent = stats.hitsTaken;
+    $("stat-record").textContent = `${stats.wins}–${stats.losses}–${stats.draws}`;
     $("stat-best").textContent =
       bestWinRate < 0 ? "–" : (bestWinRate * 100).toFixed(1) + "%";
   }
@@ -249,6 +260,20 @@
     sim.reset();
     drawChart();
     setStatus("Brain reset");
+  });
+
+  // Click the arena to drop an obstacle (mapping CSS pixels -> canvas pixels)
+  arenaCanvas.addEventListener("click", (e) => {
+    const rect = arenaCanvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left) * (arenaCanvas.width / rect.width);
+    const y = (e.clientY - rect.top) * (arenaCanvas.height / rect.height);
+    sim.addObstacle(x, y);
+    renderer.draw(sim);
+  });
+
+  $("btn-clear-obstacles").addEventListener("click", () => {
+    sim.clearObstacles();
+    renderer.draw(sim);
   });
 
   document.querySelectorAll("#speed-buttons .speed").forEach((btn) => {

@@ -11,7 +11,13 @@ const CONFIG = {
     brakeDecel: 420,
     drag: 60,
     turnRate: 2.6,
+    turnFullSpeedFrac: 0.35, // reach full turn rate at this fraction of maxSpeed
+    slideSpeedRetain: 0.92, // speed kept per tick while sliding along wall/obstacle
+    reverseSpeedFactor: 1 / 3, // max reverse speed as a fraction of maxSpeed
     maxHealth: 4,
+  },
+  obstacle: {
+    radius: 28,
   },
   gun: {
     reloadTime: 0.6,
@@ -22,15 +28,15 @@ const CONFIG = {
     coneRange: 420,
   },
   rewards: {
-    hitEnemy: 25,
-    enemyEliminated: 100,
-    hitByEnemy: -25,
-    eliminated: -100,
+    hitEnemy: 30,
+    enemyEliminated: 120,
+    hitByEnemy: -15, // less fear of trading shots, so it's willing to engage
+    eliminated: -50, // losing a fight hurts less than fleeing forever
     wallCollision: -5,
     wastedShot: -1,
-    enemyInCone: 0.2,
-    aliveTick: 0.05,
-    timeTick: -0.01,
+    enemyInCone: 0.5, // reward aiming at the enemy — pulls it toward a fight
+    aliveTick: 0.0, // don't pay it just for surviving (this caused the fleeing)
+    timeTick: -0.03, // stalling now costs, so it must end the match decisively
   },
   dqn: {
     bufferSize: 10000,

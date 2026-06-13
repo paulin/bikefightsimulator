@@ -1,7 +1,7 @@
 "use strict";
 
 // Scripted opponent: turn toward the learner, close distance when far,
-// fire when the learner is in the firing cone, avoid walls.
+// fire when the learner is in the firing cone, avoid walls and obstacles.
 function scriptedBotControls(sim, idx) {
   const self = sim.vehicles[idx];
   const enemy = sim.vehicles[1 - idx];
@@ -18,14 +18,15 @@ function scriptedBotControls(sim, idx) {
   else if (dist > 90) throttle = 0;
   else throttle = -1;
 
-  // Wall avoidance: if heading into a nearby wall at speed, brake and
-  // steer toward the more open side.
-  const front = sim.wallDistance(self, 0);
-  if (front < 90 && self.speed > 40) {
-    const left = sim.wallDistance(self, -Math.PI / 2);
-    const right = sim.wallDistance(self, Math.PI / 2);
+  // Wall & obstacle avoidance: if something blocks the path ahead, steer
+  // toward the more open side. Slow down only for very close blockers so the
+  // bot still threads past obstacles instead of freezing.
+  const front = sim.clearance(self, 0);
+  if (front < 110 && self.speed > 40) {
+    const left = sim.clearance(self, -Math.PI / 2);
+    const right = sim.clearance(self, Math.PI / 2);
     steer = left > right ? -1 : 1;
-    throttle = -1;
+    if (front < 70) throttle = -1;
   }
 
   const fire = enemy.alive && sim.inFiringCone(self, enemy) && self.reloadTimer <= 0;

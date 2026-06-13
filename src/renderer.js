@@ -20,6 +20,17 @@ class Renderer {
     ctx.lineWidth = 2;
     ctx.strokeRect(1, 1, this.width - 2, this.height - 2);
 
+    // Obstacles (green circles) — block shots and bikes
+    for (const o of sim.obstacles) {
+      ctx.fillStyle = "#3fb950";
+      ctx.beginPath();
+      ctx.arc(o.x, o.y, o.radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = "#2ea043";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
     for (let i = 0; i < 2; i++) {
       this.drawVehicle(sim.vehicles[i], VEHICLE_COLORS[i], sim);
     }

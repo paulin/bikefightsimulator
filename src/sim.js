@@ -48,8 +48,17 @@ class Simulation {
     this.cfg = cfg;
     this.vehicles = [new Vehicle(cfg), new Vehicle(cfg)];
     this.projectiles = [];
+    this.obstacles = []; // green circles: block shots and movement, persist across resets
     this.maxTicks = Math.round(cfg.episodeSeconds / cfg.dt);
     this.reset();
+  }
+
+  addObstacle(x, y) {
+    this.obstacles.push({ x, y, radius: this.cfg.obstacle.radius });
+  }
+
+  clearObstacles() {
+    this.obstacles = [];
   }
 
   reset() {
@@ -99,29 +108,71 @@ class Simulation {
     const vc = this.cfg.vehicle;
     const gun = this.cfg.gun;
 
-    v.heading = wrapAngle(v.heading + c.steer * vc.turnRate * dt);
+    // A bike can only steer while it's rolling, but it reaches full turn
+    // agility well below top speed so it can swerve around obstacles instead of
+    // grinding into them. (Magnitude, so it can still steer in reverse.)
+    const steerFactor = Math.min(1, Math.abs(v.speed) / (vc.maxSpeed * vc.turnFullSpeedFrac));
+    v.heading = wrapAngle(v.heading + c.steer * vc.turnRate * steerFactor * dt);
 
-    if (c.throttle > 0) v.speed += vc.accel * dt;
-    else if (c.throttle < 0) v.speed -= vc.brakeDecel * dt;
-    else v.speed -= vc.drag * dt;
-    v.speed = Math.max(0, Math.min(vc.maxSpeed, v.speed));
+    if (c.throttle > 0) {
+      v.speed += vc.accel * dt;
+    } else if (c.throttle < 0) {
+      // Brake, then reverse — lets a stuck bike back out
+      v.speed -= vc.brakeDecel * dt;
+    } else {
+      // Coast: drag always bleeds speed toward zero, whichever way we're moving
+      if (v.speed > 0) v.speed = Math.max(0, v.speed - vc.drag * dt);
+      else if (v.speed < 0) v.speed = Math.min(0, v.speed + vc.drag * dt);
+    }
+    const maxReverse = vc.maxSpeed * vc.reverseSpeedFactor;
+    v.speed = Math.max(-maxReverse, Math.min(vc.maxSpeed, v.speed));
 
     v.x += Math.cos(v.heading) * v.speed * dt;
     v.y += Math.sin(v.heading) * v.speed * dt;
 
-    // Wall collision: clamp inside arena, penalize on first contact
+    // Wall collision: clamp inside the arena and build an inward normal so the
+    // bike slides along the wall instead of grinding to a halt against it.
     const r = vc.radius;
     const { width: W, height: H } = this.cfg.arena;
     let hitWall = false;
-    if (v.x < r) { v.x = r; hitWall = true; }
-    if (v.x > W - r) { v.x = W - r; hitWall = true; }
-    if (v.y < r) { v.y = r; hitWall = true; }
-    if (v.y > H - r) { v.y = H - r; hitWall = true; }
+    let wnx = 0, wny = 0;
+    if (v.x < r) { v.x = r; wnx += 1; hitWall = true; }
+    if (v.x > W - r) { v.x = W - r; wnx -= 1; hitWall = true; }
+    if (v.y < r) { v.y = r; wny += 1; hitWall = true; }
+    if (v.y > H - r) { v.y = H - r; wny -= 1; hitWall = true; }
     if (hitWall) {
-      v.speed *= 0.4;
-      if (!v.touchingWall) ev.wallHit = true;
+      const nl = Math.hypot(wnx, wny);
+      if (nl > 1e-9) this.slideHeading(v, wnx / nl, wny / nl);
     }
-    v.touchingWall = hitWall;
+
+    // Obstacle collision: push the bike out, then redirect its heading along
+    // the obstacle's tangent so it slides around the curve instead of getting
+    // hung up grinding straight into it.
+    let hitObstacle = false;
+    for (const o of this.obstacles) {
+      const ox = v.x - o.x;
+      const oy = v.y - o.y;
+      const od = Math.hypot(ox, oy);
+      const minD = r + o.radius;
+      if (od >= minD) continue;
+      hitObstacle = true;
+      // Outward normal from the obstacle center to the bike
+      let nx, ny;
+      if (od > 1e-9) { nx = ox / od; ny = oy / od; }
+      else { nx = Math.cos(v.heading + Math.PI); ny = Math.sin(v.heading + Math.PI); }
+      v.x = o.x + nx * minD;
+      v.y = o.y + ny * minD;
+      this.slideHeading(v, nx, ny);
+    }
+    // Re-clamp to the arena in case an obstacle push shoved us past a wall
+    v.x = Math.max(r, Math.min(W - r, v.x));
+    v.y = Math.max(r, Math.min(H - r, v.y));
+
+    // Both walls and obstacles barely slow you now — you slide along them.
+    if (hitWall || hitObstacle) v.speed *= vc.slideSpeedRetain;
+    const collided = hitWall || hitObstacle;
+    if (collided && !v.touchingWall) ev.wallHit = true;
+    v.touchingWall = collided;
 
     // Weapon
     v.reloadTimer = Math.max(0, v.reloadTimer - dt);
@@ -134,6 +185,19 @@ class Simulation {
       v.reloadTimer = gun.reloadTime;
       ev.fired = true;
     }
+  }
+
+  // If the bike is driving into a surface (inward unit normal nx,ny), redirect
+  // its heading along the tangent so it slides along the surface.
+  slideHeading(v, nx, ny) {
+    const fx = Math.cos(v.heading);
+    const fy = Math.sin(v.heading);
+    const into = fx * nx + fy * ny; // < 0 means heading points into the surface
+    if (into >= 0) return;
+    const tx = fx - into * nx;
+    const ty = fy - into * ny;
+    const tl = Math.hypot(tx, ty);
+    if (tl > 1e-6) v.heading = Math.atan2(ty / tl, tx / tl);
   }
 
   separateVehicles() {
@@ -171,6 +235,20 @@ class Simulation {
       p.x += p.vx * dt;
       p.y += p.vy * dt;
       p.ttl -= dt;
+
+      // Obstacles block shots
+      let blocked = false;
+      for (const o of this.obstacles) {
+        if (Math.hypot(o.x - p.x, o.y - p.y) < o.radius + this.cfg.gun.projectileRadius) {
+          blocked = true;
+          break;
+        }
+      }
+      if (blocked) {
+        p.alive = false;
+        events[p.owner].wastedShots++;
+        continue;
+      }
 
       const target = this.vehicles[1 - p.owner];
       if (target.alive && Math.hypot(target.x - p.x, target.y - p.y) < hitRadius) {
@@ -218,6 +296,25 @@ class Simulation {
     return t === Infinity ? Math.hypot(W, H) : Math.max(0, t);
   }
 
+  // Distance to the nearest obstacle along heading + relAngle (Infinity if none)
+  obstacleDistance(v, relAngle) {
+    const angle = v.heading + relAngle;
+    const dx = Math.cos(angle);
+    const dy = Math.sin(angle);
+    let t = Infinity;
+    for (const o of this.obstacles) {
+      const hit = rayCircleHit(v.x, v.y, dx, dy, o.x, o.y, o.radius);
+      if (hit < t) t = hit;
+    }
+    return t;
+  }
+
+  // Clearance ahead along a ray: nearest of wall or obstacle. This is what the
+  // bikes sense, so they can steer around obstacles instead of into them.
+  clearance(v, relAngle) {
+    return Math.min(this.wallDistance(v, relAngle), this.obstacleDistance(v, relAngle));
+  }
+
   getObservation(i) {
     const v = this.vehicles[i];
     const e = this.vehicles[1 - i];
@@ -240,9 +337,9 @@ class Simulation {
       Math.cos(relAngle),
       this.inFiringCone(v, e) ? 1 : 0,
       v.reloadTimer <= 0 ? 1 : 0,
-      this.wallDistance(v, 0) / diag,
-      this.wallDistance(v, -Math.PI / 2) / diag,
-      this.wallDistance(v, Math.PI / 2) / diag,
+      this.clearance(v, 0) / diag,
+      this.clearance(v, -Math.PI / 2) / diag,
+      this.clearance(v, Math.PI / 2) / diag,
     ];
   }
 
@@ -261,6 +358,23 @@ class Simulation {
     if (e.eliminated) r += R.eliminated;
     return r;
   }
+}
+
+// Smallest non-negative distance from point (px,py) along unit ray (dx,dy) to
+// the circle centered (cx,cy) radius R. Infinity if the ray misses.
+function rayCircleHit(px, py, dx, dy, cx, cy, R) {
+  const fx = px - cx;
+  const fy = py - cy;
+  const b = 2 * (fx * dx + fy * dy);
+  const c = fx * fx + fy * fy - R * R;
+  const disc = b * b - 4 * c; // ray dir is unit, so a = 1
+  if (disc < 0) return Infinity;
+  const s = Math.sqrt(disc);
+  const t1 = (-b - s) / 2;
+  if (t1 >= 0) return t1;
+  const t2 = (-b + s) / 2;
+  if (t2 >= 0) return t2; // ray origin is inside the circle
+  return Infinity;
 }
 
 if (typeof module !== "undefined") {
