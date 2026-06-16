@@ -5,6 +5,103 @@ and changes.
 
 ## 2026-06-16
 
+- **Blog post — Venture Studio Simulator explainer.** Added
+  `blog/2026-06-16-venture-studio-simulator.md`, a drop-in Jekyll post (front
+  matter + `_posts`-style filename) covering what the simulator models (venture
+  studio cohort, product pathway RL1–RL10, BSSS ownership), the investor buy-in /
+  give-up mechanic, capital-vs-operational costs, the monthly funnel, spinout
+  criteria, the simulated cap table, what's deliberately simplified, and the tech.
+  Plus `blog/README.md` on how to copy posts into a Jekyll site.
+
+- **MIN-802 — Venture Simulator Finishing (running ticket, rapid/inline process).**
+  (1) Raise target is now an editable number input in the funding panel while
+  fundraising (default $300k, open); after **Fill Fund** the target locks (shown
+  with a 🔒) and the Add Investor button is disabled in both the funding panel and
+  the Edit Participants modal, with a "Fund is filled" note/tooltip. Reset returns
+  to the editable fundraising state (`makeInitialState`). `venturestudio/app.js` +
+  `style.css`. Verified with a headless smoke test (default 300k; editing to 500k
+  pre-fill funds to 500k; render + modal clean in fundraising and filled states).
+  (2) **Rollovers + popup explainers everywhere** — added one shared floating
+  tooltip driven by `data-tip` attributes via document-level delegation (works
+  through re-renders and overflow:hidden boxes), plus small "ⓘ" explainer icons on
+  section headers. Annotated ~118 elements: section titles, the three machine areas
+  (Investment/Pipeline/Ventures), the fund tank, every funding stat + investor row,
+  funnel stages/chips/killed/spun-out, venture-card stage bar / BSSS donut / each
+  metric / ownership legend / spinout eligibility, spinout LLC rows, every cap-table
+  column + group + the fund-deployed line, and the Edit Participants field headers.
+  Verified live with Playwright (tooltip shows correct text on hover for the title,
+  a stat row, and the pie; hides on mouseout; 118 `[data-tip]` nodes; zero console
+  errors) + screenshot.
+
+- **MIN-801 — Additional Studio Panel changes.** In `venturestudio/app.js` +
+  `style.css`: (1) labeled the three Studio-Machine areas — **Investment**
+  (funding), **Pipeline** (funnel), **Ventures** (spun-out strip); (2) the funding
+  tank now represents the live fund level (fills while fundraising, **drains** as
+  capital is drawn) with a transient "−$X" drain cue + fading band shown on advance
+  (`pulse` + `lastDraw`); (3) wrapped the whole section in a subtle `studio-machine`
+  border/bg so the parts read as one machine; (4) made **Venture Pipeline, Spinout
+  LLCs, Simulated Cap Table, Studio Activity** collapsible via a new
+  `collapsibleSection` helper + module-level `sectionCollapsed` state (survives the
+  per-advance re-render), **collapsed by default**, title+sub always visible, with a
+  colorful per-section toggle button; "How To Read This" left non-collapsible.
+  Verified with `node --check` + a headless render smoke test across fundraising /
+  active-pulse(drain) / mid-sim-with-draws / real-spinout states (no errors; drain
+  band + spinout cards build). Implemented **inline on Opus** because the
+  tier-subagent spawn was returning 500s at the time (issue had no `model:` label, so
+  it would otherwise have been sonnet); visual eyeballing left to review.
+
+- **MIN-799 — Improve the Studio Machine panel.** Restructured
+  `fundingAndMachineSection` (`venturestudio/app.js` + `style.css`): added a
+  full-width **action bar** (title left; "Month N" label + Advance One Month
+  (primary, top-right) + Edit Participants + Reset on the right), leaving the
+  funding panel with only Add Investor / Fill VSC1. Replaced the old 3-node flow
+  with a **left-to-right funnel** across the 10 product-pathway stages (RL1→RL10)
+  — tapering silhouette columns (wide left, narrow right) with live venture name
+  chips placed in their current stage, an "✗ N killed" attrition marker, and a
+  "→ N spun out" exit cap — so the selection funnel is shown graphically. Added a
+  full-width **spun-out strip** below showing each LLC's profit/mo (+) and cost/mo
+  (−). Verified by the implementer with Playwright against the running dev server
+  (fundraising → Fill VSC1 → advance 3 months: month label updates live, ventures
+  move across funnel stages, "1 killed" appears, Advance disabled during
+  fundraising, modal opens, tablet viewport wraps cleanly, zero JS errors) plus a
+  screenshot. Implemented by Claude Sonnet 4.6 (default tier — issue had no
+  `model:` label).
+
+- **MIN-798 — Save & reload participants as CSV.** Added Export/Import CSV to the
+  Edit Participants modal so a participant configuration can be saved to a file and
+  reloaded. Two pure, testable helpers in `venturestudio/app.js`:
+  `participantsToCsv(state)` (one row per contributor/operations/investor; columns
+  `category,name,role,sharePercent,fundedMonthly,giveUpPercent,contributionAmount`;
+  RFC-4180 quoting via `csvEscape`) and `csvToParticipants(text)` (tolerant parser
+  handling quoted fields + optional header, fresh ids, numeric coercion, throws on
+  empty/garbage). Export downloads via a Blob + temporary anchor; Import uses a
+  hidden file input → `FileReader` → replaces the three lists, recomputes cohort
+  shares, and rebuilds the modal in place (no auto-save, so the existing
+  Cancel/Save snapshot semantics hold). Verified with a headless round-trip
+  (3 contributors + 1 operations + 3 investors survive export→import with matching
+  numbers; comma/quote names preserved; empty/garbage CSV throws) plus a
+  render+modal smoke test. Implemented by Claude Sonnet 4.6 (default tier — issue
+  had no `model:` label).
+
+- **MIN-795 — Investors buy shares from participants; split capital vs operational
+  costs.** Reworked the Venture Studio Simulator economics so investors hold **no
+  base BSSS** — every participant earns the venture's shares through work and
+  *gives up* a cut of them to the investor pool in exchange for monthly cash drawn
+  from the fund (investor ownership = Σ give-ups, divided by cohort share). The
+  fund now depletes **only by actual draws** (no flat operating budget); if nobody
+  draws, it holds. Operations stops being a no-equity fee entity and becomes
+  contributor-like (earns BSSS + gives up shares); the **10% LLC stewardship fee
+  was dropped**. Two cost categories — contributors = capital (development),
+  operations = operational (overhead) — are surfaced via running fund totals and a
+  cap table grouped Operational / Capital / Investors. Key changes in
+  `venturestudio/app.js`: new `payMonthlyDraws`, `fundedParticipants`, `opsSet`;
+  `allocateMonthlyPoints` drops the investor base; operations gain
+  sharePercent/fundedMonthly/giveUpPercent. Verified with a headless 18-month sim:
+  every ownership table sums to 100%, default investor share of filled ≈ 12.3%
+  (ops 35%×35%), operations keeps ≈ 22.8%, `capitalSpent` $0 / `operationalSpent`
+  tracks the $15k/mo draw, no stewardship fee anywhere, render()/openEditModal()
+  clean. Built on the unmerged MIN-793 branch. Implemented by Claude Opus 4.8.
+
 - **MIN-793 — Separate the Steward from the Contributors.** Pulled the steward
   out of the Venture Studio Simulator's contributor list into a new top-level
   **Operations** category (`state.operations`, default "Ministry of Product" at
