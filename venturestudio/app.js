@@ -1036,7 +1036,7 @@
   function spinoutSection() {
     const sec = el("div", "section");
     sec.appendChild(el("h2", null, "Spinout LLCs"));
-    sec.appendChild(el("p", "sub", "At spinout, BSSS ownership converts into formal ownership. The LLC pays MoP a stewardship fee; profit flows to owners."));
+    sec.appendChild(el("p", "sub", "At spinout, BSSS ownership converts into formal ownership. The LLC pays Operations a stewardship fee; profit flows to owners."));
 
     if (!state.spinouts.length) {
       sec.appendChild(el("div", "empty", "No spinouts yet. Grow a venture to $5k MRR with positive cash flow, repeatable acquisition, a stable product and ≤10 ops hours/week."));
@@ -1063,7 +1063,7 @@
     row("MRR", fmtMoney(llc.mrr));
     row("Est. valuation", fmtMoney(assetValuation(llc.mrr)));
     row("Operating expenses", fmtMoney(llc.operatingExpenses));
-    row(`MoP stewardship (${llc.mopStewardshipFeePercent}%)`, fmtMoney(llc.stewardshipFee));
+    row(`Operations stewardship (${llc.mopStewardshipFeePercent}%)`, fmtMoney(llc.stewardshipFee));
     row("Est. monthly profit", fmtMoney(llc.profit));
     card.appendChild(t);
 
@@ -1132,7 +1132,7 @@
     sec.appendChild(el("h2", null, "Simulated Cap Table"));
     sec.appendChild(el("p", "sub",
       "Who owns what, what each stake is worth on paper, and how much cash each has made. " +
-      "Valuation is illustrative (≈ 5× ARR). Funded = cumulative cash the VSC1 fund has paid a contributor; " +
+      "Valuation is illustrative (≈ 5× ARR). Funded = cumulative cash the VSC1 fund has paid a contributor or operations entity; " +
       "Distributions = profit + stewardship fees from spun-out LLCs."));
 
     const assets = assetList();
@@ -1258,7 +1258,7 @@
     const grid = el("div", "explain");
     const cards = [
       ["VSC1", "The first venture studio cohort. Investors fund the cohort, not Ministry of Product itself. The cohort funds one year of focused venture creation."],
-      ["MoP", "Ministry of Product is the steward and operating system. It receives monthly operating funds from the cohort and uses them to validate, build, launch, and grow ventures."],
+      ["Operations", "Ministry of Product runs the studio as Operations. It charges a monthly fee from the cohort fund (and a 10% fee on spun-out LLCs) to validate, build, launch, and grow ventures — but earns no BSSS equity itself."],
       ["Ventures", "Ventures move from Idea to Stable. Each stage has a fixed BSSS ownership slice. Contributors and investors earn portions of those slices through points and capital."],
       ["BSSS", "Big Slice / Small Slice. Each stage opens a Big Slice with a fixed %. Your Small Slice = your points ÷ total points in that slice. Completed slices lock and can't be diluted."],
       ["Spinouts", "At $5k MRR with positive cash flow, repeatable acquisition, a stable product and ≤10 mgmt hrs/week, a venture spins out into an LLC and BSSS becomes formal ownership."],
