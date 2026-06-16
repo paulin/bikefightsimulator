@@ -415,6 +415,28 @@ a { color: #6fc3ff; }
 .stat-row:last-child { border-bottom: none; }
 .stat-label { color: #9aa3b5; }
 .stat-val { color: #f0f2f7; font-variant-numeric: tabular-nums; }
+.raise-input {
+  width: 110px;
+  padding: 2px 6px;
+  background: #14161c;
+  color: #f0f2f7;
+  border: 1px solid #3c6a7a;
+  border-radius: 4px;
+  font-size: 13px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.raise-input:focus { outline: none; border-color: #6fc3ff; }
+.locked-tag { font-size: 11px; opacity: 0.8; }
+.fund-filled-note {
+  margin: 10px 0 0;
+  padding: 6px 10px;
+  font-size: 12px;
+  color: #8fd18f;
+  background: #16241a;
+  border: 1px solid #2d5a3d;
+  border-radius: 6px;
+}
 .status-pill {
   font-size: 10px;
   text-transform: uppercase;

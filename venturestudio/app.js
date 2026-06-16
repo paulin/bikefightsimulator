@@ -847,7 +847,12 @@
         modal.appendChild(row);
       });
       const addI = el("button", "tiny modal-add", "+ Add Investor");
+      if (state.vsc1.status !== "fundraising") {
+        addI.disabled = true;
+        addI.title = "Fund is filled — no new investors can be added";
+      }
       addI.onclick = () => {
+        if (state.vsc1.status !== "fundraising") return;
         state.investors.push({ id: generateId("inv"), name: "New Investor", contributionAmount: 50000, cohortShare: 0 });
         build();
       };
@@ -948,22 +953,41 @@
     tankRow.appendChild(tank);
 
     const stats = el("div", "stats");
-    const rows = [
-      ["Cohort", v.name + ' <span class="status-pill ' + statusCls + '">' + v.status + "</span>"],
-      ["Raise target", fmtMoney(v.raiseTarget)],
+    function statRow(k, valHtml) {
+      const r = el("div", "stat-row");
+      r.appendChild(el("span", "stat-label", k));
+      r.appendChild(el("span", "stat-val", valHtml));
+      stats.appendChild(r);
+    }
+
+    statRow("Cohort", v.name + ' <span class="status-pill ' + statusCls + '">' + v.status + "</span>");
+
+    // Raise target — editable before the fund is filled, locked after.
+    const rtRow = el("div", "stat-row");
+    rtRow.appendChild(el("span", "stat-label", "Raise target"));
+    if (v.status === "fundraising") {
+      const tin = document.createElement("input");
+      tin.type = "number"; tin.min = "0"; tin.step = "10000";
+      tin.value = v.raiseTarget; tin.className = "raise-input";
+      tin.title = "Set the raise target before filling the fund";
+      tin.onchange = () => {
+        const n = parseFloat(tin.value);
+        if (!isNaN(n) && n > 0) { state.vsc1.raiseTarget = Math.round(n); save(); render(); }
+      };
+      rtRow.appendChild(tin);
+    } else {
+      rtRow.appendChild(el("span", "stat-val", fmtMoney(v.raiseTarget) + ' <span class="locked-tag" title="Fund is filled">🔒</span>'));
+    }
+    stats.appendChild(rtRow);
+
+    [
       ["Funded", fmtMoney(v.fundedAmount)],
       ["Remaining capital", fmtMoney(v.remainingCapital)],
       ["Current month", v.durationMonths ? `${state.currentMonth} / ${v.durationMonths}` : state.currentMonth],
       ["Capital spent", fmtMoney(state.capitalSpent || 0)],
       ["Operational spent", fmtMoney(state.operationalSpent || 0)],
       ["Target spinouts", `${state.spinouts.length} / ${v.targetSpinouts}`],
-    ];
-    rows.forEach(([k, val]) => {
-      const r = el("div", "stat-row");
-      r.appendChild(el("span", "stat-label", k));
-      r.appendChild(el("span", "stat-val", String(val)));
-      stats.appendChild(r);
-    });
+    ].forEach(([k, val]) => statRow(k, String(val)));
 
     // investor breakdown
     const invHead = el("div", "stat-row");
@@ -980,9 +1004,14 @@
     tankRow.appendChild(stats);
     fp.appendChild(tankRow);
 
+    const filled = v.status !== "fundraising";
+
     const btns = el("div", "button-row");
     const bAddInv = el("button", null, "Add Investor");
+    bAddInv.disabled = filled;
+    if (filled) bAddInv.title = "Fund is filled — no new investors can be added";
     bAddInv.onclick = () => {
+      if (filled) return;
       const name = prompt("Investor name?", "Investor " + (state.investors.length + 1));
       if (!name) return;
       const amt = parseFloat(prompt("Contribution amount ($)?", "50000"));
@@ -990,16 +1019,18 @@
       addInvestor(state, name, Math.round(amt));
       save(); render();
     };
-    const bFill = el("button", "primary", "Fill VSC1");
-    bFill.disabled = v.status !== "fundraising";
+    const bFill = el("button", "primary", "Fill Fund");
+    bFill.disabled = filled;
     bFill.onclick = () => { fillVSC1(state); save(); render(); };
 
     btns.appendChild(bAddInv);
     btns.appendChild(bFill);
     fp.appendChild(btns);
 
-    if (v.status === "fundraising") {
-      fp.appendChild(el("p", "machine-note", "Fill VSC1 before activating the cohort — underfunding forces consulting work and breaks focus."));
+    if (!filled) {
+      fp.appendChild(el("p", "machine-note", "Set the raise target and add investors, then Fill Fund. Once filled, the target locks and no new investors can be added."));
+    } else {
+      fp.appendChild(el("p", "fund-filled-note", "🔒 Fund is filled — raise target and investor roster are locked."));
     }
 
     grid.appendChild(fp);

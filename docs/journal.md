@@ -5,6 +5,15 @@ and changes.
 
 ## 2026-06-16
 
+- **MIN-802 — Venture Simulator Finishing (running ticket, rapid/inline process).**
+  (1) Raise target is now an editable number input in the funding panel while
+  fundraising (default $300k, open); after **Fill Fund** the target locks (shown
+  with a 🔒) and the Add Investor button is disabled in both the funding panel and
+  the Edit Participants modal, with a "Fund is filled" note/tooltip. Reset returns
+  to the editable fundraising state (`makeInitialState`). `venturestudio/app.js` +
+  `style.css`. Verified with a headless smoke test (default 300k; editing to 500k
+  pre-fill funds to 500k; render + modal clean in fundraising and filled states).
+
 - **MIN-801 — Additional Studio Panel changes.** In `venturestudio/app.js` +
   `style.css`: (1) labeled the three Studio-Machine areas — **Investment**
   (funding), **Pipeline** (funnel), **Ventures** (spun-out strip); (2) the funding
