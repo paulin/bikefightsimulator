@@ -644,6 +644,34 @@
     return e;
   }
 
+  // Collapse state for the detail sections — module-level so it survives the full
+  // re-render that runs on every advance/edit. Collapsed by default.
+  const sectionCollapsed = { pipeline: true, spinout: true, captable: true, log: true };
+
+  // Build a collapsible section shell: title + sub stay visible, a colorful toggle
+  // button reveals/hides the body. Returns { sec, body } — append content to body.
+  function collapsibleSection(key, title, subText, accent) {
+    const sec = el("div", "section collapsible" + (sectionCollapsed[key] ? " is-collapsed" : ""));
+    const head = el("div", "section-head");
+    const text = el("div", "section-head-text");
+    text.appendChild(el("h2", null, title));
+    if (subText) text.appendChild(el("p", "sub", subText));
+    head.appendChild(text);
+    const btn = el("button", "collapse-btn", sectionCollapsed[key] ? "Show ▾" : "Hide ▴");
+    btn.style.color = accent;
+    btn.style.borderColor = accent;
+    btn.onclick = () => {
+      sectionCollapsed[key] = !sectionCollapsed[key];
+      sec.classList.toggle("is-collapsed", sectionCollapsed[key]);
+      btn.textContent = sectionCollapsed[key] ? "Show ▾" : "Hide ▴";
+    };
+    head.appendChild(btn);
+    sec.appendChild(head);
+    const body = el("div", "section-body");
+    sec.appendChild(body);
+    return { sec, body };
+  }
+
   // ---- Edit-participants popover ----
   function textInput(value, cls, ph, oninput) {
     const i = document.createElement("input");
@@ -858,10 +886,13 @@
 
   // ---- Section 1+2: Funding tank + monthly machine ----
   function fundingAndMachineSection(pulse) {
-    const sec = el("div", "section");
+    const sec = el("div", "section studio-machine");
 
     const v = state.vsc1;
-    const pct = clamp(Math.round((v.fundedAmount / v.raiseTarget) * 100), 0, 100);
+    // Tank fills while fundraising, then drains as capital is drawn down.
+    const fillBasis = v.status === "fundraising" ? v.fundedAmount : v.remainingCapital;
+    const pct = clamp(Math.round((fillBasis / v.raiseTarget) * 100), 0, 100);
+    const drained = (state.lastDraw && (state.lastDraw.capital + state.lastDraw.operational)) || 0;
     const statusCls = v.status === "active" ? "active" : v.status === "complete" ? "complete" : "";
 
     // --- Top action bar ---
@@ -894,7 +925,8 @@
     const grid = el("div", "top-grid");
 
     // --- Funding panel (left, ~360px) ---
-    const fp = el("div", "panel");
+    const fp = el("div", "panel area area--investment");
+    fp.appendChild(el("div", "area-label", "Investment"));
 
     const tankRow = el("div", "tank-row");
     const tank = el("div", "tank");
@@ -902,6 +934,15 @@
     const fill = el("div", "tank-fill");
     fill.style.height = pct + "%";
     tank.appendChild(fill);
+    // Drain cue: the slice of fund that just left this month, shown as a fading band + label.
+    if (pulse && drained > 0 && v.status !== "fundraising") {
+      const drainPct = clamp(Math.round((drained / v.raiseTarget) * 100), 0, 100);
+      const band = el("div", "tank-drain");
+      band.style.bottom = pct + "%";
+      band.style.height = drainPct + "%";
+      tank.appendChild(band);
+      tank.appendChild(el("div", "tank-drain-label", "−" + fmtMoney(drained)));
+    }
     tank.appendChild(el("div", "tank-pct", pct + "%"));
     tank.appendChild(el("div", "tank-base", "VSC1"));
     tankRow.appendChild(tank);
@@ -964,7 +1005,8 @@
     grid.appendChild(fp);
 
     // --- Funnel panel (right, large area) ---
-    const funnelPanel = el("div", "panel funnel-panel");
+    const funnelPanel = el("div", "panel funnel-panel area area--pipeline");
+    funnelPanel.appendChild(el("div", "area-label", "Pipeline"));
 
     // Compute per-stage venture counts
     const killedCount = state.ventures.filter((x) => x.status === "killed").length;
@@ -1019,6 +1061,8 @@
     sec.appendChild(grid);
 
     // --- Spun-out strip (full width, below grid) ---
+    const spunArea = el("div", "area area--ventures");
+    spunArea.appendChild(el("div", "area-label", "Ventures"));
     const spunStrip = el("div", "spunout-strip");
     if (state.spinouts.length === 0) {
       spunStrip.appendChild(el("p", "spunout-empty", "No spinouts yet — grow a venture to spin it out."));
@@ -1034,25 +1078,25 @@
         spunStrip.appendChild(card);
       });
     }
-    sec.appendChild(spunStrip);
+    spunArea.appendChild(spunStrip);
+    sec.appendChild(spunArea);
 
     return sec;
   }
 
   // ---- Section 3: Venture pipeline ----
   function pipelineSection() {
-    const sec = el("div", "section");
-    sec.appendChild(el("h2", null, "Venture Pipeline"));
-    sec.appendChild(el("p", "sub", "A funnel, not three static bets. Most ideas are expected to fail; capital concentrates around traction."));
+    const { sec, body } = collapsibleSection("pipeline", "Venture Pipeline",
+      "A funnel, not three static bets. Most ideas are expected to fail; capital concentrates around traction.", "#c8a83c");
 
     const live = state.ventures.filter((v) => v.status !== "spun_out");
     if (!live.length) {
-      sec.appendChild(el("div", "empty", "No ventures in the pipeline. Advance a month to seed ideas."));
+      body.appendChild(el("div", "empty", "No ventures in the pipeline. Advance a month to seed ideas."));
       return sec;
     }
     const grid = el("div", "pipeline-grid");
     live.forEach((v) => grid.appendChild(ventureCard(v)));
-    sec.appendChild(grid);
+    body.appendChild(grid);
     return sec;
   }
 
@@ -1237,17 +1281,16 @@
 
   // ---- Section 4: Spinout LLCs ----
   function spinoutSection() {
-    const sec = el("div", "section");
-    sec.appendChild(el("h2", null, "Spinout LLCs"));
-    sec.appendChild(el("p", "sub", "At spinout, BSSS ownership converts into formal ownership. Monthly profit flows to owners by stake."));
+    const { sec, body } = collapsibleSection("spinout", "Spinout LLCs",
+      "At spinout, BSSS ownership converts into formal ownership. Monthly profit flows to owners by stake.", "#9fe0ff");
 
     if (!state.spinouts.length) {
-      sec.appendChild(el("div", "empty", "No spinouts yet. Grow a venture to $5k MRR with positive cash flow, repeatable acquisition, a stable product and ≤10 ops hours/week."));
+      body.appendChild(el("div", "empty", "No spinouts yet. Grow a venture to $5k MRR with positive cash flow, repeatable acquisition, a stable product and ≤10 ops hours/week."));
       return sec;
     }
     const grid = el("div", "spinout-grid");
     state.spinouts.forEach((llc) => grid.appendChild(llcCard(llc)));
-    sec.appendChild(grid);
+    body.appendChild(grid);
     return sec;
   }
 
@@ -1330,12 +1373,10 @@
   }
 
   function capTableSection() {
-    const sec = el("div", "section");
-    sec.appendChild(el("h2", null, "Simulated Cap Table"));
-    sec.appendChild(el("p", "sub",
+    const { sec, body } = collapsibleSection("captable", "Simulated Cap Table",
       "Who owns what, what each stake is worth on paper, and how much cash each has made. " +
       "Holders are grouped by cost category. Valuation is illustrative (≈ 5× ARR). " +
-      "Funded = cumulative cash a participant has drawn from the fund; Distributions = profit from spun-out LLCs."));
+      "Funded = cumulative cash a participant has drawn from the fund; Distributions = profit from spun-out LLCs.", "#8fd18f");
 
     const assets = assetList();
     const holders = holderList();
@@ -1357,7 +1398,7 @@
       });
       valWrap.appendChild(vt);
     }
-    sec.appendChild(valWrap);
+    body.appendChild(valWrap);
 
     // --- Fund-deployed summary ---
     const fundLine = el("div", "ct-fundline");
@@ -1447,15 +1488,18 @@
     wrap.appendChild(scroll);
     wrap.appendChild(el("p", "hint",
       "Equity value is unrealized paper value of BSSS stakes. Funded cash is drawn from the fund while the cohort is active — a capital cost for contributors (development), an operational cost for operations (overhead). A participant who draws fund cash gives up shares for it, and those shares are what the investors own. Distributions accrue only after a venture spins out."));
-    sec.appendChild(wrap);
+    body.appendChild(wrap);
     return sec;
   }
 
   // ---- Activity log ----
   function logSection() {
-    const sec = el("div", "section");
-    if (!state.log.length) return sec;
-    sec.appendChild(el("h2", null, "Studio Activity"));
+    const { sec, body } = collapsibleSection("log", "Studio Activity",
+      "A running log of what the studio did each month.", "#8fa6c0");
+    if (!state.log.length) {
+      body.appendChild(el("div", "empty", "No activity yet — fill VSC1 and advance a month."));
+      return sec;
+    }
     const panel = el("div", "panel");
     panel.style.maxHeight = "160px";
     panel.style.overflowY = "auto";
@@ -1467,7 +1511,7 @@
       r.querySelector(".stat-val").style.maxWidth = "78%";
       panel.appendChild(r);
     });
-    sec.appendChild(panel);
+    body.appendChild(panel);
     return sec;
   }
 
