@@ -29,6 +29,21 @@ splits each filled wedge into investor (blue), MoP/steward (purple), and
 contributor (green) sub-arcs; the active slice has a gold outline; planned future
 stages are gray (unallocated).
 
+## Paid contributors
+
+Ownership of the "work" side of each venture is split between the **investor
+pool** and a list of **paid contributors** — people or firms funded from the
+VSC1 operating budget who earn an ownership share in exchange. Each has an
+editable **name**, **role**, and **share %**. The defaults are Ministry of
+Product (Steward, 35%), Strategic Marketing (15%), Engineering (10%), and
+Product (5%), against a 35% investor pool. A role of **steward** also collects
+the 10% LLC stewardship fee.
+
+The percents are weights: each filled BSSS slice is divided in those proportions,
+so when the totals sum to ~100% the numbers read as literal ownership. Use
+**Edit Participants ✎** to add or remove contributors and investors, change
+roles, and tune every percent (a live total shows how close you are to 100%).
+
 ## Controls
 
 - **Add Investor** — commit more capital to VSC1 (recomputes cohort shares).

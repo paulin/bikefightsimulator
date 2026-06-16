@@ -123,10 +123,11 @@
 
   // Map a participant id to an ownership group. Steward-role contributors count
   // as the MoP/steward portion; everyone else is a contributor.
+  function isSteward(c) { return (c.role || "").trim().toLowerCase() === "steward"; }
   let stewardSet = new Set();
   function refreshStewardSet() {
     stewardSet = new Set((state && state.contributors ? state.contributors : [])
-      .filter((c) => c.role === "steward").map((c) => c.id));
+      .filter(isSteward).map((c) => c.id));
   }
   function participantGroup(pid) {
     if (pid === "investor_pool") return "investor";
@@ -157,10 +158,14 @@
         { id: "investor2", name: "Investor 2", contributionAmount: 100000, cohortShare: 0 },
         { id: "investor3", name: "Investor 3", contributionAmount: 150000, cohortShare: 0 },
       ],
+      // Paid contributors: funded from the VSC1 operating budget, each earning an
+      // ownership share (a weight against the investor pool). Roles are editable;
+      // a role of "steward" also collects the LLC stewardship fees.
       contributors: [
-        { id: "matt", name: "Ministry of Product", role: "steward", pointsEarned: 0 },
-        { id: "kevin", name: "Kevin", role: "engineer", pointsEarned: 0 },
-        { id: "adam", name: "Adam", role: "product_developer", pointsEarned: 0 },
+        { id: "matt", name: "Ministry of Product", role: "Steward", sharePercent: 35, pointsEarned: 0 },
+        { id: "mktg", name: "Strategic Marketing", role: "Strategic Marketing", sharePercent: 15, pointsEarned: 0 },
+        { id: "kevin", name: "Kevin", role: "Engineering", sharePercent: 10, pointsEarned: 0 },
+        { id: "adam", name: "Adam", role: "Product", sharePercent: 5, pointsEarned: 0 },
       ],
       ventures: [
         addVenture("TrueUp"),
@@ -255,15 +260,15 @@
   function allocateMonthlyPoints(venture, state) {
     const active = venture.slices.find((s) => s.status === "active");
     if (!active) return;
-    // Steward (MoP) leads, contributors build, investor capital backs the work.
-    const stewards = state.contributors.filter((c) => c.role === "steward");
-    const perSteward = stewards.length ? 1000 / stewards.length : 0;
-    stewards.forEach((c) => { addPoints(active, c.id, perSteward); c.pointsEarned += perSteward; });
-    // distribute contributor points across non-steward contributors
-    const contribs = state.contributors.filter((c) => c.role !== "steward");
-    const per = contribs.length ? 500 / contribs.length : 0;
-    contribs.forEach((c) => { addPoints(active, c.id, per); c.pointsEarned += per; });
-    addPoints(active, "investor_pool", 500);
+    // Each filled slice splits by configured weights: the investor pool plus each
+    // paid contributor's share. Ownership of a fully filled venture matches these
+    // percents (normalized) — investor capital backs work, contributors build.
+    addPoints(active, "investor_pool", state.vsc1.investorPoolPercent || 0);
+    state.contributors.forEach((c) => {
+      const w = c.sharePercent || 0;
+      addPoints(active, c.id, w);
+      c.pointsEarned += w;
+    });
   }
 
   function addPoints(slice, pid, pts) {
@@ -278,7 +283,7 @@
   // Pay out one month of a spun-out LLC's economics: the 10% stewardship fee to
   // Ministry of Product (the steward), and the remaining profit to equity holders.
   function distributeLLCEarnings(state, llc) {
-    const stewards = state.contributors.filter((c) => c.role === "steward");
+    const stewards = state.contributors.filter(isSteward);
     if (stewards.length) {
       const per = llc.stewardshipFee / stewards.length;
       stewards.forEach((c) => addEarnings(state, c.id, per));
@@ -411,8 +416,9 @@
       if (pct > 0) {
         rows.push({
           id: c.id,
-          name: c.name + (c.role === "steward" ? " (Steward)" : ""),
-          group: c.role === "steward" ? "mop" : "contributor",
+          name: c.name,
+          role: c.role,
+          group: isSteward(c) ? "mop" : "contributor",
           percent: pct,
         });
       }
@@ -505,62 +511,134 @@
     return e;
   }
 
-  // ---- Edit-names popover ----
-  function openNamesModal() {
-    const existing = document.getElementById("names-overlay");
-    if (existing) existing.remove();
+  // ---- Edit-participants popover ----
+  function textInput(value, cls, ph, oninput) {
+    const i = document.createElement("input");
+    i.type = "text"; i.value = value || ""; i.className = cls; if (ph) i.placeholder = ph;
+    i.oninput = () => oninput(i.value);
+    return i;
+  }
+  function numInput(value, cls, oninput) {
+    const i = document.createElement("input");
+    i.type = "number"; i.value = value; i.className = cls; i.min = "0";
+    i.oninput = () => { const n = parseFloat(i.value); oninput(isNaN(n) ? 0 : n); };
+    return i;
+  }
 
-    const overlay = el("div", "modal-overlay");
-    overlay.id = "names-overlay";
-    const modal = el("div", "modal");
-    modal.appendChild(el("h2", null, "Edit Names"));
-    modal.appendChild(el("p", "modal-sub", "Rename the steward, contributors, and investors. Roles and ownership stay the same."));
+  function openEditModal() {
+    const snapshot = JSON.stringify({
+      ipp: state.vsc1.investorPoolPercent,
+      contributors: state.contributors,
+      investors: state.investors,
+    });
 
-    const fields = []; // { input, apply }
-    function group(title) { modal.appendChild(el("div", "modal-group", title)); }
-    function field(typeLabel, value, apply) {
-      const row = el("div", "modal-field");
-      row.appendChild(el("span", "modal-flabel", typeLabel));
-      const input = document.createElement("input");
-      input.type = "text";
-      input.value = value;
-      input.className = "modal-input";
-      row.appendChild(input);
-      modal.appendChild(row);
-      fields.push({ input, apply });
+    function close() { const o = document.getElementById("edit-overlay"); if (o) o.remove(); }
+    function cancel() {
+      const s = JSON.parse(snapshot);
+      state.vsc1.investorPoolPercent = s.ipp;
+      state.contributors = s.contributors;
+      state.investors = s.investors;
+      refreshStewardSet();
+      close(); render();
+    }
+    function saveAndClose() {
+      const oldFunded = state.vsc1.fundedAmount;
+      const newFunded = state.investors.reduce((a, i) => a + (i.contributionAmount || 0), 0);
+      state.vsc1.fundedAmount = newFunded;
+      if (state.vsc1.status !== "fundraising") state.vsc1.remainingCapital += (newFunded - oldFunded);
+      recomputeCohortShares(state);
+      refreshStewardSet();
+      save(); close(); render();
     }
 
-    group("Steward");
-    state.contributors.filter((c) => c.role === "steward").forEach((c) => field("Steward", c.name, (v) => { c.name = v; }));
+    function build() {
+      close();
+      const overlay = el("div", "modal-overlay");
+      overlay.id = "edit-overlay";
+      const modal = el("div", "modal modal-wide");
+      modal.appendChild(el("h2", null, "Edit Participants"));
+      modal.appendChild(el("p", "modal-sub",
+        "Paid contributors are funded from the VSC1 operating budget and earn an ownership share of every venture. " +
+        "A role of “steward” also collects the 10% LLC stewardship fee. Percents are weights against the investor pool — keep the total near 100% for literal percentages."));
 
-    const others = state.contributors.filter((c) => c.role !== "steward");
-    if (others.length) {
-      group("Contributors");
-      others.forEach((c) => field(c.role.replace(/_/g, " "), c.name, (v) => { c.name = v; }));
+      const totalEl = el("div", "modal-total");
+      function updateTotal() {
+        const sum = (state.vsc1.investorPoolPercent || 0) +
+          state.contributors.reduce((a, c) => a + (c.sharePercent || 0), 0);
+        const off = Math.abs(sum - 100) > 0.5;
+        totalEl.innerHTML = "Ownership weights total: <b>" + Math.round(sum) + "%</b>" +
+          (off ? " — not 100%, shares are shown normalized" : "");
+        totalEl.style.color = off ? "#b9a96f" : "#8fd18f";
+      }
+
+      // Investor pool
+      modal.appendChild(el("div", "modal-group", "Investor Pool"));
+      const ippRow = el("div", "modal-row");
+      ippRow.appendChild(el("span", "modal-flabel", "Investor pool"));
+      ippRow.appendChild(numInput(state.vsc1.investorPoolPercent, "modal-input modal-pct",
+        (v) => { state.vsc1.investorPoolPercent = v; updateTotal(); }));
+      ippRow.appendChild(el("span", "modal-pctsign", "%"));
+      modal.appendChild(ippRow);
+
+      // Paid contributors
+      modal.appendChild(el("div", "modal-group", "Paid Contributors"));
+      state.contributors.forEach((c) => {
+        const row = el("div", "modal-row");
+        row.appendChild(textInput(c.name, "modal-input", "Name", (v) => { c.name = v; }));
+        row.appendChild(textInput(c.role, "modal-input modal-role", "Role", (v) => { c.role = v; refreshStewardSet(); }));
+        row.appendChild(numInput(c.sharePercent, "modal-input modal-pct", (v) => { c.sharePercent = v; updateTotal(); }));
+        row.appendChild(el("span", "modal-pctsign", "%"));
+        const del = el("button", "tiny danger", "✕");
+        del.title = "Remove contributor";
+        del.onclick = () => { state.contributors = state.contributors.filter((x) => x !== c); refreshStewardSet(); build(); };
+        row.appendChild(del);
+        modal.appendChild(row);
+      });
+      const addC = el("button", "tiny modal-add", "+ Add Paid Contributor");
+      addC.onclick = () => {
+        state.contributors.push({ id: generateId("c"), name: "New Contributor", role: "Contributor", sharePercent: 5, pointsEarned: 0 });
+        build();
+      };
+      modal.appendChild(addC);
+
+      // Investors
+      modal.appendChild(el("div", "modal-group", "Investors"));
+      state.investors.forEach((inv) => {
+        const row = el("div", "modal-row");
+        row.appendChild(textInput(inv.name, "modal-input", "Name", (v) => { inv.name = v; }));
+        row.appendChild(el("span", "modal-pctsign", "$"));
+        row.appendChild(numInput(inv.contributionAmount, "modal-input modal-amt", (v) => { inv.contributionAmount = v; }));
+        const del = el("button", "tiny danger", "✕");
+        del.title = "Remove investor";
+        del.onclick = () => { state.investors = state.investors.filter((x) => x !== inv); build(); };
+        row.appendChild(del);
+        modal.appendChild(row);
+      });
+      const addI = el("button", "tiny modal-add", "+ Add Investor");
+      addI.onclick = () => {
+        state.investors.push({ id: generateId("inv"), name: "New Investor", contributionAmount: 50000, cohortShare: 0 });
+        build();
+      };
+      modal.appendChild(addI);
+
+      modal.appendChild(totalEl);
+      updateTotal();
+
+      const actions = el("div", "modal-actions");
+      const cancelB = el("button", null, "Cancel");
+      cancelB.onclick = cancel;
+      const saveB = el("button", "primary", "Save");
+      saveB.onclick = saveAndClose;
+      actions.appendChild(cancelB);
+      actions.appendChild(saveB);
+      modal.appendChild(actions);
+
+      overlay.appendChild(modal);
+      overlay.addEventListener("click", (e) => { if (e.target === overlay) cancel(); });
+      document.body.appendChild(overlay);
     }
 
-    group("Investors");
-    state.investors.forEach((i) => field(fmtMoney(i.contributionAmount), i.name, (v) => { i.name = v; }));
-
-    const actions = el("div", "modal-actions");
-    const save = el("button", "primary", "Save");
-    save.onclick = () => {
-      fields.forEach((f) => { const v = f.input.value.trim(); if (v) f.apply(v); });
-      save();
-      overlay.remove();
-      render();
-    };
-    const cancel = el("button", null, "Cancel");
-    cancel.onclick = () => overlay.remove();
-    actions.appendChild(cancel);
-    actions.appendChild(save);
-    modal.appendChild(actions);
-
-    overlay.appendChild(modal);
-    overlay.addEventListener("click", (e) => { if (e.target === overlay) overlay.remove(); });
-    document.body.appendChild(overlay);
-    const first = modal.querySelector("input");
-    if (first) first.focus();
+    build();
   }
 
   function render(pulse) {
@@ -649,8 +727,8 @@
     bAdvance.disabled = v.status === "fundraising";
     bAdvance.onclick = () => { advanceOneMonth(state); save(); render(true); };
 
-    const bNames = el("button", null, "Edit Names ✎");
-    bNames.onclick = openNamesModal;
+    const bNames = el("button", null, "Edit Participants ✎");
+    bNames.onclick = openEditModal;
 
     const bReset = el("button", "danger", "Reset");
     bReset.onclick = () => { if (confirm("Reset the whole simulation?")) reset(); };
@@ -967,9 +1045,9 @@
   // of Product) both holds BSSS equity and collects the LLC stewardship fees.
   function holderList() {
     const list = [];
-    state.investors.forEach((i) => list.push({ id: i.id, name: i.name, type: "Investor", group: "investor" }));
+    state.investors.forEach((i) => list.push({ id: i.id, name: i.name, type: "Investor", group: "investor", steward: false }));
     state.contributors.forEach((c) =>
-      list.push({ id: c.id, name: c.name, type: c.role === "steward" ? "Steward" : "Contributor", group: c.role === "steward" ? "mop" : "contributor" }));
+      list.push({ id: c.id, name: c.name, type: c.role || "Contributor", group: isSteward(c) ? "mop" : "contributor", steward: isSteward(c) }));
     return list;
   }
 
@@ -1060,7 +1138,7 @@
       const chips = holdings.map((x) =>
         `<span class="ct-hold ${x.spun ? "spun" : ""}">${x.name} ${fmtPct(x.pct)} · ${fmtMoney(x.val)}</span>`).join(" ");
       let hold;
-      if (h.type === "Steward") {
+      if (h.steward) {
         const note = `<span class="ct-note">+ 10% stewardship fees on every spun-out LLC · ${fmtMoney(state.mop.totalReceived)} operating budget received (cost-recovery)</span>`;
         hold = "<td>" + (chips ? chips + " " : "") + note + "</td>";
       } else if (!holdings.length) {

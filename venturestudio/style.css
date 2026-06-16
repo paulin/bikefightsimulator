@@ -389,6 +389,23 @@ tr.ct-total td {
 .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
 .modal-actions button { flex: 0 0 auto; }
 
+.modal-wide { max-width: 560px; }
+.modal-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.modal-row .modal-input { flex: 1; min-width: 0; }
+.modal-role { flex: 0 0 150px; }
+.modal-pct { flex: 0 0 64px; text-align: right; }
+.modal-amt { flex: 0 0 110px; text-align: right; }
+.modal-pctsign { color: #717a8c; font-size: 13px; width: 10px; }
+.modal-row button.tiny.danger { flex: 0 0 auto; padding: 4px 8px; }
+.modal-add { margin: 2px 0 4px; }
+.modal-total {
+  margin: 16px 0 0;
+  padding-top: 10px;
+  border-top: 1px solid #262a35;
+  font-size: 13px;
+}
+.modal-total b { font-variant-numeric: tabular-nums; }
+
 /* --- Explanation copy ---------------------------------------------------- */
 .explain {
   display: grid;
