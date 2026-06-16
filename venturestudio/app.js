@@ -86,8 +86,8 @@
     return (contributorPoints / totalSlicePoints) * bigSlicePercent;
   }
 
-  // Ownership earned by one group ("investor" | "mop" | "contributor") across all
-  // active+completed slices. Planned slices are unallocated future ownership.
+  // Ownership earned by one group ("investor" | "operations" | "contributor")
+  // across active+completed slices. Planned slices are unallocated future ownership.
   function groupOwnership(venture, group) {
     return venture.slices.reduce((total, slice) => {
       if (slice.status === "planned") return total;
@@ -909,6 +909,7 @@
       return x;
     };
     legend.appendChild(li(COLORS.investor, "Investors", groupOwnership(v, "investor")));
+    legend.appendChild(li(COLORS.operations, "Operations", groupOwnership(v, "operations")));
     legend.appendChild(li(COLORS.contributor, "Contributors", groupOwnership(v, "contributor")));
     legend.appendChild(li(COLORS.unallocated, "Unallocated", Math.max(0, 100 - earnedOwnership(v))));
     metrics.appendChild(legend);
