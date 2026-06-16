@@ -130,7 +130,8 @@ a { color: #6fc3ff; }
   display: flex;
   align-items: flex-end;
   gap: 3px;
-  height: 180px;
+  flex: 1;
+  min-height: 220px;
   padding-bottom: 0;
 }
 
@@ -164,6 +165,15 @@ a { color: #6fc3ff; }
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 100%;
+}
+.funnel-stage-count {
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+  color: #14161c;
+  background: #6fc3ff;
+  border-radius: 8px;
+  padding: 0 5px;
+  margin-top: 1px;
 }
 
 .funnel-silhouette {
@@ -360,45 +370,8 @@ button.danger { background: #5a2d2d; border-color: #7a3c3c; }
 button.danger:hover:not(:disabled) { background: #6c3535; }
 button.tiny { padding: 4px 9px; font-size: 12px; }
 
-/* --- Machine flow -------------------------------------------------------- */
-.machine { display: flex; flex-direction: column; height: 100%; }
-.flow {
-  display: flex;
-  align-items: stretch;
-  gap: 0;
-  flex-wrap: wrap;
-}
-.flow-node {
-  flex: 1;
-  min-width: 120px;
-  background: #14161c;
-  border: 1px solid #2e3342;
-  border-radius: 8px;
-  padding: 12px;
-  text-align: center;
-}
-.flow-node h3 { margin: 0 0 6px; font-size: 13px; color: #f0f2f7; }
-.flow-node .big {
-  font-size: 20px;
-  font-weight: 600;
-  color: #6fc3ff;
-  font-variant-numeric: tabular-nums;
-}
-.flow-node .small { font-size: 11px; color: #717a8c; }
-.flow-arrow {
-  display: flex;
-  align-items: center;
-  padding: 0 6px;
-  color: #4a5266;
-  font-size: 22px;
-}
-.flow-arrow.pulse { color: #8fd18f; animation: pulse 0.8s ease; }
-@keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.5); color: #b8f0b8; } 100% { transform: scale(1); } }
+/* --- Machine note -------------------------------------------------------- */
 .machine-note { font-size: 12px; color: #717a8c; margin-top: 12px; }
-@media (max-width: 640px) {
-  .flow { flex-direction: column; }
-  .flow-arrow { justify-content: center; transform: rotate(90deg); padding: 4px 0; }
-}
 
 /* --- Venture pipeline ---------------------------------------------------- */
 .pipeline-grid {

@@ -975,21 +975,22 @@
     STAGES.forEach((stage, idx) => {
       const col = el("div", "funnel-stage");
 
-      // Stage header label
+      // Ventures at this stage (active or idea or stalled)
+      const venturesHere = state.ventures.filter(
+        (x) => x.stage === stage.id && (x.status === "idea" || x.status === "active" || x.status === "stalled")
+      );
+
+      // Stage header label (with a count badge so a crowded column never hides ventures)
       const lbl = el("div", "funnel-stage-label");
       lbl.appendChild(el("span", "funnel-stage-id", stage.id));
       lbl.appendChild(el("span", "funnel-stage-name", stage.name));
+      if (venturesHere.length) lbl.appendChild(el("span", "funnel-stage-count", String(venturesHere.length)));
       col.appendChild(lbl);
 
       // Funnel silhouette height: wide on left, narrow on right (RL1=100%, RL10=20%)
       const heightPct = Math.round(100 - (idx / (STAGES.length - 1)) * 80);
       const silhouette = el("div", "funnel-silhouette");
       silhouette.style.height = heightPct + "%";
-
-      // Ventures at this stage (active or idea or stalled)
-      const venturesHere = state.ventures.filter(
-        (x) => x.stage === stage.id && (x.status === "idea" || x.status === "active" || x.status === "stalled")
-      );
 
       venturesHere.forEach((vent) => {
         const chip = el("div", "funnel-chip funnel-chip--" + vent.status, vent.name);
