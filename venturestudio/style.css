@@ -118,6 +118,43 @@ a { color: #6fc3ff; }
 }
 .area--ventures { margin-top: 14px; }
 
+/* --- Rollovers / popup explainers ---------------------------------------- */
+.tooltip {
+  position: fixed;
+  z-index: 200;
+  max-width: 270px;
+  background: #0d0f14;
+  border: 1px solid #3a4658;
+  border-radius: 6px;
+  padding: 8px 11px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #d8dce6;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
+  pointer-events: none;
+  white-space: pre-line;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+.tooltip.show { opacity: 1; }
+.info {
+  display: inline-block;
+  width: 14px; height: 14px;
+  line-height: 14px;
+  text-align: center;
+  font-size: 10px;
+  font-style: normal;
+  border-radius: 50%;
+  background: #2a3340;
+  color: #9fb4cc;
+  cursor: help;
+  margin-left: 6px;
+  vertical-align: middle;
+  font-variant: normal;
+}
+.info:hover { background: #3a4a5c; color: #cfe2f5; }
+.area-label[data-tip], .funnel-stage-label[data-tip] { cursor: help; }
+
 .panel {
   background: #1b1e27;
   border: 1px solid #2e3342;

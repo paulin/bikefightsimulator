@@ -13,6 +13,17 @@ and changes.
   to the editable fundraising state (`makeInitialState`). `venturestudio/app.js` +
   `style.css`. Verified with a headless smoke test (default 300k; editing to 500k
   pre-fill funds to 500k; render + modal clean in fundraising and filled states).
+  (2) **Rollovers + popup explainers everywhere** — added one shared floating
+  tooltip driven by `data-tip` attributes via document-level delegation (works
+  through re-renders and overflow:hidden boxes), plus small "ⓘ" explainer icons on
+  section headers. Annotated ~118 elements: section titles, the three machine areas
+  (Investment/Pipeline/Ventures), the fund tank, every funding stat + investor row,
+  funnel stages/chips/killed/spun-out, venture-card stage bar / BSSS donut / each
+  metric / ownership legend / spinout eligibility, spinout LLC rows, every cap-table
+  column + group + the fund-deployed line, and the Edit Participants field headers.
+  Verified live with Playwright (tooltip shows correct text on hover for the title,
+  a stat row, and the pie; hides on mouseout; 118 `[data-tip]` nodes; zero console
+  errors) + screenshot.
 
 - **MIN-801 — Additional Studio Panel changes.** In `venturestudio/app.js` +
   `style.css`: (1) labeled the three Studio-Machine areas — **Investment**
