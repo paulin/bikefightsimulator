@@ -158,7 +158,7 @@
         { id: "investor3", name: "Investor 3", contributionAmount: 150000, cohortShare: 0 },
       ],
       contributors: [
-        { id: "matt", name: "Matt Paulin", role: "steward", pointsEarned: 0 },
+        { id: "matt", name: "Ministry of Product", role: "steward", pointsEarned: 0 },
         { id: "kevin", name: "Kevin", role: "engineer", pointsEarned: 0 },
         { id: "adam", name: "Adam", role: "product_developer", pointsEarned: 0 },
       ],
@@ -275,10 +275,16 @@
     state.earnings[pid] = (state.earnings[pid] || 0) + amount;
   }
 
-  // Pay out one month of a spun-out LLC's economics: stewardship fee to the MoP
-  // entity, and the remaining profit to equity holders by ownership %.
+  // Pay out one month of a spun-out LLC's economics: the 10% stewardship fee to
+  // Ministry of Product (the steward), and the remaining profit to equity holders.
   function distributeLLCEarnings(state, llc) {
-    addEarnings(state, "mop_entity", llc.stewardshipFee);
+    const stewards = state.contributors.filter((c) => c.role === "steward");
+    if (stewards.length) {
+      const per = llc.stewardshipFee / stewards.length;
+      stewards.forEach((c) => addEarnings(state, c.id, per));
+    } else {
+      addEarnings(state, "mop_entity", llc.stewardshipFee);
+    }
     if (llc.profit > 0) {
       llc.ownership.forEach((o) => {
         if (!o.id) return; // skip the unallocated row
@@ -499,6 +505,64 @@
     return e;
   }
 
+  // ---- Edit-names popover ----
+  function openNamesModal() {
+    const existing = document.getElementById("names-overlay");
+    if (existing) existing.remove();
+
+    const overlay = el("div", "modal-overlay");
+    overlay.id = "names-overlay";
+    const modal = el("div", "modal");
+    modal.appendChild(el("h2", null, "Edit Names"));
+    modal.appendChild(el("p", "modal-sub", "Rename the steward, contributors, and investors. Roles and ownership stay the same."));
+
+    const fields = []; // { input, apply }
+    function group(title) { modal.appendChild(el("div", "modal-group", title)); }
+    function field(typeLabel, value, apply) {
+      const row = el("div", "modal-field");
+      row.appendChild(el("span", "modal-flabel", typeLabel));
+      const input = document.createElement("input");
+      input.type = "text";
+      input.value = value;
+      input.className = "modal-input";
+      row.appendChild(input);
+      modal.appendChild(row);
+      fields.push({ input, apply });
+    }
+
+    group("Steward");
+    state.contributors.filter((c) => c.role === "steward").forEach((c) => field("Steward", c.name, (v) => { c.name = v; }));
+
+    const others = state.contributors.filter((c) => c.role !== "steward");
+    if (others.length) {
+      group("Contributors");
+      others.forEach((c) => field(c.role.replace(/_/g, " "), c.name, (v) => { c.name = v; }));
+    }
+
+    group("Investors");
+    state.investors.forEach((i) => field(fmtMoney(i.contributionAmount), i.name, (v) => { i.name = v; }));
+
+    const actions = el("div", "modal-actions");
+    const save = el("button", "primary", "Save");
+    save.onclick = () => {
+      fields.forEach((f) => { const v = f.input.value.trim(); if (v) f.apply(v); });
+      save();
+      overlay.remove();
+      render();
+    };
+    const cancel = el("button", null, "Cancel");
+    cancel.onclick = () => overlay.remove();
+    actions.appendChild(cancel);
+    actions.appendChild(save);
+    modal.appendChild(actions);
+
+    overlay.appendChild(modal);
+    overlay.addEventListener("click", (e) => { if (e.target === overlay) overlay.remove(); });
+    document.body.appendChild(overlay);
+    const first = modal.querySelector("input");
+    if (first) first.focus();
+  }
+
   function render(pulse) {
     refreshStewardSet();
     app.innerHTML = "";
@@ -585,12 +649,16 @@
     bAdvance.disabled = v.status === "fundraising";
     bAdvance.onclick = () => { advanceOneMonth(state); save(); render(true); };
 
+    const bNames = el("button", null, "Edit Names ✎");
+    bNames.onclick = openNamesModal;
+
     const bReset = el("button", "danger", "Reset");
     bReset.onclick = () => { if (confirm("Reset the whole simulation?")) reset(); };
 
     btns.appendChild(bAddInv);
     btns.appendChild(bFill);
     btns.appendChild(bAdvance);
+    btns.appendChild(bNames);
     btns.appendChild(bReset);
     fp.appendChild(btns);
 
@@ -895,13 +963,13 @@
   // ---- Section 5: Simulated cap table ----
   function assetValuation(mrr) { return Math.round(mrr * 12 * VALUATION_ARR_MULTIPLE); }
 
-  // Everyone who can hold value or earn cash in the model.
+  // Everyone who can hold value or earn cash in the model. The steward (Ministry
+  // of Product) both holds BSSS equity and collects the LLC stewardship fees.
   function holderList() {
     const list = [];
     state.investors.forEach((i) => list.push({ id: i.id, name: i.name, type: "Investor", group: "investor" }));
     state.contributors.forEach((c) =>
       list.push({ id: c.id, name: c.name, type: c.role === "steward" ? "Steward" : "Contributor", group: c.role === "steward" ? "mop" : "contributor" }));
-    list.push({ id: "mop_entity", name: "Ministry of Product", type: "Entity", group: "mop" });
     return list;
   }
 
@@ -917,7 +985,6 @@
   }
 
   function holderAssetPercent(holder, asset) {
-    if (holder.id === "mop_entity") return 0; // entity earns fees, holds no BSSS equity
     if (asset.spun) {
       const row = asset.llc.ownership.find((o) => o.id === holder.id);
       return row ? row.percent : 0;
@@ -990,14 +1057,16 @@
       const tdName = `<td>${sw}${h.name}</td>`;
       const tdType = `<td><span class="status-pill">${h.type}</span></td>`;
 
+      const chips = holdings.map((x) =>
+        `<span class="ct-hold ${x.spun ? "spun" : ""}">${x.name} ${fmtPct(x.pct)} · ${fmtMoney(x.val)}</span>`).join(" ");
       let hold;
-      if (h.id === "mop_entity") {
-        hold = `<td><span class="ct-note">10% stewardship fee on every spun-out LLC · ${fmtMoney(state.mop.totalReceived)} operating budget received (cost-recovery)</span></td>`;
+      if (h.type === "Steward") {
+        const note = `<span class="ct-note">+ 10% stewardship fees on every spun-out LLC · ${fmtMoney(state.mop.totalReceived)} operating budget received (cost-recovery)</span>`;
+        hold = "<td>" + (chips ? chips + " " : "") + note + "</td>";
       } else if (!holdings.length) {
         hold = `<td><span class="ct-note">no value-bearing holdings yet</span></td>`;
       } else {
-        hold = "<td>" + holdings.map((x) =>
-          `<span class="ct-hold ${x.spun ? "spun" : ""}">${x.name} ${fmtPct(x.pct)} · ${fmtMoney(x.val)}</span>`).join(" ") + "</td>";
+        hold = "<td>" + chips + "</td>";
       }
       const total = equity + cash;
       const tdEq = `<td class='r'>${equity > 0 ? fmtMoney(equity) : "—"}</td>`;

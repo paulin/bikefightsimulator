@@ -336,6 +336,59 @@ tr.ct-total td {
 .ct-note { font-size: 11px; color: #717a8c; }
 .tag-spun { color: #9fe0ff; font-size: 11px; }
 
+/* --- Edit-names modal ---------------------------------------------------- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 9, 13, 0.7);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 60px 16px;
+  z-index: 50;
+  overflow-y: auto;
+}
+.modal {
+  background: #1b1e27;
+  border: 1px solid #2e3342;
+  border-radius: 10px;
+  padding: 20px 22px;
+  width: 100%;
+  max-width: 440px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+.modal h2 { margin: 0 0 4px; font-size: 18px; color: #f0f2f7; }
+.modal-sub { margin: 0 0 14px; font-size: 13px; color: #9aa3b5; }
+.modal-group {
+  margin: 14px 0 8px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #717a8c;
+  border-bottom: 1px solid #262a35;
+  padding-bottom: 4px;
+}
+.modal-field { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.modal-flabel {
+  flex: 0 0 92px;
+  font-size: 12px;
+  color: #8fa6c0;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.modal-input {
+  flex: 1;
+  padding: 7px 9px;
+  background: #14161c;
+  color: #d8dce6;
+  border: 1px solid #3a4052;
+  border-radius: 5px;
+  font-size: 13px;
+}
+.modal-input:focus { outline: none; border-color: #3c6a7a; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+.modal-actions button { flex: 0 0 auto; }
+
 /* --- Explanation copy ---------------------------------------------------- */
 .explain {
   display: grid;
