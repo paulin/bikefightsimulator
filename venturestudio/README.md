@@ -29,20 +29,30 @@ splits each filled wedge into investor (blue), MoP/steward (purple), and
 contributor (green) sub-arcs; the active slice has a gold outline; planned future
 stages are gray (unallocated).
 
-## Paid contributors
+## Contributors, funding, and give-up
 
-Ownership of the "work" side of each venture is split between the **investor
-pool** and a list of **paid contributors** — people or firms funded from the
-VSC1 operating budget who earn an ownership share in exchange. Each has an
-editable **name**, **role**, and **share %**. The defaults are Ministry of
-Product (Steward, 35%), Strategic Marketing (15%), Engineering (10%), and
-Product (5%), against a 35% investor pool. A role of **steward** also collects
-the 10% LLC stewardship fee.
+Each contributor earns a base **BSSS %** of every venture through their work. In
+exchange for monthly cash from the VSC1 fund (**Funded $/mo**), a contributor can
+**give up** a cut of the shares they earn — those shares pass to the investor
+pool. So a contributor trades equity for salary-like cash; one who takes no fund
+money keeps everything they earn.
 
-The percents are weights: each filled BSSS slice is divided in those proportions,
-so when the totals sum to ~100% the numbers read as literal ownership. Use
-**Edit Participants ✎** to add or remove contributors and investors, change
-roles, and tune every percent (a live total shows how close you are to 100%).
+Each contributor row has an editable **name**, **role**, **BSSS %**, **Funded
+$/mo**, and **Gives up %**. Defaults: Ministry of Product (Steward, 35% BSSS,
+$15k/mo, gives up 35%), Strategic Marketing (15%), Engineering (10%), Product
+(5%), against a 35% investor-pool base. Blank fields are treated as zero. A role
+of **steward** also collects the 10% LLC stewardship fee.
+
+Worked example — Ministry of Product earns 35% and gives up 35% of *that*: it
+keeps 35% × 0.65 = **22.75%**, and the fund gains 35% × 0.35 = **12.25%** (so the
+investor pool rises from its 35% base to ~47.25%). The give-up only moves
+*future* (unlocked) shares, matching BSSS's "locked slices can't be diluted."
+
+The BSSS base percents (investor pool + contributor shares) are weights — keep
+them near 100% for literal ownership. Use **Edit Participants ✎** to add/remove
+contributors and investors and tune every field; a live total shows how close
+the base is to 100%. The cap table then reports each holder's equity value,
+**funded** cash, **distributions** (post-spinout profit + fees), and total made.
 
 ## Controls
 

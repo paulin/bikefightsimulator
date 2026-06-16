@@ -389,15 +389,28 @@ tr.ct-total td {
 .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
 .modal-actions button { flex: 0 0 auto; }
 
-.modal-wide { max-width: 560px; }
-.modal-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.modal-wide { max-width: 720px; }
+.modal-row { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
 .modal-row .modal-input { flex: 1; min-width: 0; }
-.modal-role { flex: 0 0 150px; }
-.modal-pct { flex: 0 0 64px; text-align: right; }
-.modal-amt { flex: 0 0 110px; text-align: right; }
-.modal-pctsign { color: #717a8c; font-size: 13px; width: 10px; }
+.modal-row .modal-role { flex: 0 0 130px; }
+.modal-row .modal-pct { flex: 0 0 58px; text-align: right; }
+.modal-row .modal-amt { flex: 0 0 92px; text-align: right; }
+.modal-pctsign { color: #717a8c; font-size: 13px; width: 8px; }
 .modal-row button.tiny.danger { flex: 0 0 auto; padding: 4px 8px; }
+.modal-delbtn { flex: 0 0 auto; }
+.modal-delsp { flex: 0 0 24px; }
 .modal-add { margin: 2px 0 4px; }
+.modal-chead { margin-bottom: 4px; }
+.modal-colh {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #717a8c;
+  border: none !important;
+  background: none !important;
+  padding: 0 2px;
+}
+.modal-pct.modal-colh, .modal-amt.modal-colh { text-align: right; }
 .modal-total {
   margin: 16px 0 0;
   padding-top: 10px;
