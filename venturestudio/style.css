@@ -68,6 +68,56 @@ a { color: #6fc3ff; }
   color: #717a8c;
 }
 
+/* --- Collapsible detail sections ----------------------------------------- */
+.section-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.section-head-text { min-width: 0; }
+.section-head h2 {
+  margin: 0 0 4px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #9aa3b5;
+}
+.section-head .sub { margin: 0; font-size: 13px; color: #717a8c; }
+.collapse-btn {
+  flex: 0 0 auto;
+  padding: 4px 14px;
+  background: transparent;
+  border: 1px solid #3a4052;
+  border-radius: 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.collapse-btn:hover { background: rgba(255, 255, 255, 0.06); }
+.collapsible.is-collapsed { margin-bottom: 14px; }
+.collapsible.is-collapsed .section-head { margin-bottom: 0; }
+.collapsible.is-collapsed .section-body { display: none; }
+
+/* --- Studio machine grouping + area labels ------------------------------- */
+.studio-machine {
+  border: 1px solid #313a4d;
+  background: #161922;
+  border-radius: 12px;
+  padding: 16px;
+}
+.area-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+  color: #6f7a8f;
+  margin-bottom: 8px;
+}
+.area--ventures { margin-top: 14px; }
+
 .panel {
   background: #1b1e27;
   border: 1px solid #2e3342;
@@ -327,6 +377,32 @@ a { color: #6fc3ff; }
 }
 .tank-cap { top: 0; }
 .tank-base { bottom: 0; }
+
+/* Drain cue when a month is advanced — the slice of fund that just left. */
+.tank-drain {
+  position: absolute;
+  left: 0; right: 0;
+  background: rgba(214, 138, 60, 0.55);
+  pointer-events: none;
+  animation: drainFade 1.1s ease forwards;
+}
+@keyframes drainFade { 0% { opacity: 0.9; } 100% { opacity: 0; } }
+.tank-drain-label {
+  position: absolute;
+  left: 0; right: 0; top: 28%;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: #f0c07a;
+  text-shadow: 0 1px 3px #000;
+  pointer-events: none;
+  animation: drainLabel 1.2s ease forwards;
+}
+@keyframes drainLabel {
+  0% { opacity: 0; transform: translateY(6px); }
+  25% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-12px); }
+}
 
 .stats { flex: 1; }
 .stat-row {

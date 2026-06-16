@@ -5,6 +5,23 @@ and changes.
 
 ## 2026-06-16
 
+- **MIN-801 — Additional Studio Panel changes.** In `venturestudio/app.js` +
+  `style.css`: (1) labeled the three Studio-Machine areas — **Investment**
+  (funding), **Pipeline** (funnel), **Ventures** (spun-out strip); (2) the funding
+  tank now represents the live fund level (fills while fundraising, **drains** as
+  capital is drawn) with a transient "−$X" drain cue + fading band shown on advance
+  (`pulse` + `lastDraw`); (3) wrapped the whole section in a subtle `studio-machine`
+  border/bg so the parts read as one machine; (4) made **Venture Pipeline, Spinout
+  LLCs, Simulated Cap Table, Studio Activity** collapsible via a new
+  `collapsibleSection` helper + module-level `sectionCollapsed` state (survives the
+  per-advance re-render), **collapsed by default**, title+sub always visible, with a
+  colorful per-section toggle button; "How To Read This" left non-collapsible.
+  Verified with `node --check` + a headless render smoke test across fundraising /
+  active-pulse(drain) / mid-sim-with-draws / real-spinout states (no errors; drain
+  band + spinout cards build). Implemented **inline on Opus** because the
+  tier-subagent spawn was returning 500s at the time (issue had no `model:` label, so
+  it would otherwise have been sonnet); visual eyeballing left to review.
+
 - **MIN-799 — Improve the Studio Machine panel.** Restructured
   `fundingAndMachineSection` (`venturestudio/app.js` + `style.css`): added a
   full-width **action bar** (title left; "Month N" label + Advance One Month
